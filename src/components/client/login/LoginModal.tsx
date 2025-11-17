@@ -1,52 +1,233 @@
+// components/client/Login/LoginModal.tsx
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useGoogleLogin } from '@react-oauth/google';
 import { Modal, ModalHeader } from '@/components/shared/Modal';
-import Divider from '@/components/shared/Divider';
 import SocialLoginButtons from './SocialLoginButton';
-import EmailLoginForm from './EmailLoginForm';
+import LoginForm from './EmailLoginForm';
+import RegisterForm from './RegisterForm';
 import LoginTerms from './LoginTerms';
+import { ApiError } from '@/app/services/api/authApi';
+import authApi from '@/app/services/api/authApi';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+type ViewMode = 'login' | 'register';
+
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const handleGoogleLogin = () => {
-    console.log('Google login clicked');
+  const router = useRouter();
+  const [viewMode, setViewMode] = useState<ViewMode>('login');
+  const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string>();
+  const [registerErrors, setRegisterErrors] = useState<Record<string, string[]>>();
+  const [registerGeneralError, setRegisterGeneralError] = useState<string>();
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setIsLoading(true);
+
+        // 1. Get user info from Google
+        const userInfoResponse = await fetch(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: {
+              Authorization: `Bearer ${tokenResponse.access_token}`,
+            },
+          }
+        );
+
+        const userInfo = await userInfoResponse.json();
+
+        // 2. Send to Laravel backend
+        await authApi.loginWithGoogle({
+          google_id: userInfo.sub, // Google User ID
+          email: userInfo.email,
+          name: userInfo.name,
+        });
+
+        // 3. Success - close modal and refresh
+        onClose();
+        router.refresh();
+        
+      } catch (error) {
+        console.error('Google login error:', error);
+        const apiError = error as ApiError;
+        setLoginError(apiError.msg || 'Google login failed');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: (error) => {
+      console.error('Google OAuth error:', error);
+      setLoginError('Failed to connect with Google');
+    },
+  });
+
+  const handleAppleLogin = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Apple login - Not implemented');
+      alert('Apple login not implemented yet');
+    } catch (error) {
+      console.error('Apple login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleAppleLogin = () => {
-    console.log('Apple login clicked');
+  const handleFacebookLogin = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Facebook login - Implement OAuth flow');
+      alert('Please implement Facebook OAuth in production');
+    } catch (error) {
+      console.error('Facebook login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleFacebookLogin = () => {
-    console.log('Facebook login clicked');
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      setLoginError(undefined);
+
+      await authApi.login({ email, password });
+
+      onClose();
+      router.refresh();
+      
+    } catch (error) {
+      const apiError = error as ApiError;
+      setLoginError(apiError.msg || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEmailSubmit = (email: string) => {
-    console.log('Continue with email:', email);
+  const handleRegister = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+  }) => {
+    try {
+      setIsLoading(true);
+      setRegisterErrors(undefined);
+      setRegisterGeneralError(undefined);
+
+      await authApi.register(data);
+
+      onClose();
+      router.refresh();
+      
+    } catch (error) {
+      const apiError = error as ApiError;
+      
+      if (apiError.errors) {
+        setRegisterErrors(apiError.errors);
+      } else {
+        setRegisterGeneralError(apiError.msg || 'Registration failed. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const switchMode = () => {
+    setViewMode(viewMode === 'login' ? 'register' : 'login');
+    setLoginError(undefined);
+    setRegisterErrors(undefined);
+    setRegisterGeneralError(undefined);
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-4xl">
       <ModalHeader
-        title="Log in or sign up"
-        description="Check out more easily and access your tickets on any device with your GetYourGuide account."
+        title={viewMode === 'login' ? 'Welcome back' : 'Create your account'}
+        description={
+          viewMode === 'login'
+            ? 'Log in to access your bookings and saved activities'
+            : 'Sign up to start planning your next adventure'
+        }
         onClose={onClose}
       />
 
-      <SocialLoginButtons
-        onGoogleLogin={handleGoogleLogin}
-        onAppleLogin={handleAppleLogin}
-        onFacebookLogin={handleFacebookLogin}
-      />
+      <div className="grid md:grid-cols-2 gap-8 mt-6">
+        {/* Left Column - OAuth */}
+        <div className="flex flex-col justify-center">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Continue with</h3>
+            <p className="text-sm text-gray-600">Quick and secure login using your social accounts</p>
+          </div>
 
-      <Divider />
+          <SocialLoginButtons
+            onGoogleLogin={handleGoogleLogin}
+            onAppleLogin={handleAppleLogin}
+            onFacebookLogin={handleFacebookLogin}
+          />
 
-      <EmailLoginForm onSubmit={handleEmailSubmit} />
+          {/* Info box */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Why use social login?</p>
+                <ul className="space-y-1 text-xs">
+                  <li>• Faster checkout process</li>
+                  <li>• No need to remember passwords</li>
+                  <li>• Secure authentication</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <LoginTerms />
+        {/* Vertical Divider */}
+        <div className="hidden md:block absolute left-1/2 top-24 bottom-8 w-px bg-gray-200" />
+
+        {/* Right Column - Credentials */}
+        <div className="flex flex-col justify-center">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {viewMode === 'login' ? 'Or log in with email' : 'Or sign up with email'}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {viewMode === 'login' 
+                ? 'Enter your credentials to access your account'
+                : 'Create a new account with your email address'
+              }
+            </p>
+          </div>
+
+          {viewMode === 'login' ? (
+            <LoginForm onSubmit={handleLogin} isLoading={isLoading} error={loginError} />
+          ) : (
+            <RegisterForm onSubmit={handleRegister} isLoading={isLoading} errors={registerErrors} generalError={registerGeneralError} />
+          )}
+
+          {/* Switch mode button */}
+          <div className="mt-6 text-center">
+            <button
+              onClick={switchMode}
+              disabled={isLoading}
+              className="text-sm text-blue-600 hover:text-blue-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {viewMode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Log in'}
+            </button>
+          </div>
+
+          <LoginTerms />
+        </div>
+      </div>
     </Modal>
   );
 }

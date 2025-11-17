@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./global.css";
 import HeaderClient from "@/components/client/header";
 import FooterClient from "@/components/client/footer";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,14 +25,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <HeaderClient />
-        {children}
-        <FooterClient />
+        <GoogleOAuthProvider clientId={googleClientId}>
+          <HeaderClient />
+          {children}
+          <FooterClient />
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

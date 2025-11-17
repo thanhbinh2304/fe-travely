@@ -5,7 +5,7 @@ export * from './bookingApi';
 
 // Import và re-export để dễ sử dụng
 import { tourApi } from './tourApi';
-import { authApi } from './authApi';
+import  authApi  from './authApi';
 import { bookingApi } from './bookingApi';
 
 export const api = {

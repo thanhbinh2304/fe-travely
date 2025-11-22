@@ -169,7 +169,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
           <SocialLoginButtons
             onGoogleLogin={handleGoogleLogin}
-            onAppleLogin={handleAppleLogin}
             onFacebookLogin={handleFacebookLogin}
           />
 

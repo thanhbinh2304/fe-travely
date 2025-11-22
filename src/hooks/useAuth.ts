@@ -1,24 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {  User } from '@/app/services/api/authApi';
-import authApi from '@/app/services/api/authApi';
+import { useState, useEffect} from 'react';
+import { useRouter } from 'next/navigation';
+import authService from '@/app/services/authService';
+import { User } from '@/types/auth';
+
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const router = useRouter();
   useEffect(() => {
     // Check if user is authenticated on mount
     const checkAuth = async () => {
       try {
-        if (authApi.isAuthenticated()) {
-          const userData = await authApi.getProfile();
+        if (authService.isAuthenticated()) {
+          const userData = await authService.getProfile();
           setUser(userData);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        authApi.removeToken();
+        authService.removeToken();
       } finally {
         setIsLoading(false);
       }
@@ -28,8 +30,19 @@ export function useAuth() {
   }, []);
 
   const logout = async () => {
-    await authApi.logout();
-    setUser(null);
+    try {
+      await authService.logout();
+      setUser(null);
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Force logout even if API call fails
+      authService.removeToken();
+      setUser(null);
+      router.push('/');
+      router.refresh();
+    }
   };
 
   return {

@@ -1,124 +1,170 @@
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
+import { StringToBoolean } from "class-variance-authority/types";
+import { API_BASE_URL } from "../config/api";
+import { User, LoginCredentials, RegisterData, AuthResponse, GoogleLoginData, FacebookLoginData } from "../../types/auth";
+const SERVER_API = process.env.SERVER_API || 'http://localhost:8000/api';
 
-interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-  password_confirmation: string;
-}
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-}
-
-interface AuthResponse {
-  token: string;
-  user: User;
-}
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-
-const AuthService = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-      if (!response.ok) throw new Error('Invalid credentials');
-      const data = await response.json();
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-      return data;
-    } catch (error) {
-      console.error('Error logging in:', error);
-      throw error;
-    }
-  },
-
-  register: async (userData: RegisterData): Promise<AuthResponse> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-      if (!response.ok) throw new Error('Registration failed');
-      const data = await response.json();
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-      return data;
-    } catch (error) {
-      console.error('Error registering:', error);
-      throw error;
-    }
-  },
-
-  logout: async (): Promise<void> => {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        await fetch(`${API_BASE_URL}/logout`, {
-          method: 'POST',
-          headers: {
+class authService {
+    private getHeaders(includeAuth = false) {
+        const headers: Record<string, string> = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-      }
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-    } catch (error) {
-      console.error('Error logging out:', error);
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      throw error;
-    }
-  },
+            'Accept': 'application/json',
+        };
 
-  getCurrentUser: (): User | null => {
-    if (typeof window !== 'undefined') {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          return JSON.parse(userStr);
-        } catch {
-          return null;
+        if (includeAuth) {
+            const token = this.getToken();
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
         }
-      }
+        return headers;
     }
-    return null;
-  },
 
-  isAdmin: (): boolean => {
-    const user = AuthService.getCurrentUser();
-    return user?.role === 'admin';
-  },
-
-  isAuthenticated: (): boolean => {
-    if (typeof window !== 'undefined') {
-      return !!localStorage.getItem('authToken');
+    // get token from localStorage
+    getToken(): string | null {
+        if (typeof window === 'undefined') return null;
+        return localStorage.getItem('access_token');
     }
-    return false;
-  },
-
-  getToken: (): string | null => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('authToken');
+    //save token to localStorage
+    saveToken(token: string): void {
+        if (typeof window === 'undefined') return;
+        localStorage.setItem('access_token', token);
     }
-    return null;
-  },
-};
+    //remove token from localStorage 
+    removeToken(): void {
+        if (typeof window === 'undefined') return;
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+    }
 
-export default AuthService;
+    //save user to localStorage
+    saveUser(user: User): void {
+        if (typeof window === 'undefined') return;
+        localStorage.setItem('user', JSON.stringify(user));
+    }
+    //get user from localStorage
+    getUser(): User | null {
+        if (typeof window === 'undefined') return null;
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
+    }
+
+
+    //Login
+    async login(credentials: LoginCredentials): Promise<AuthResponse> {
+        const response = await fetch(`${SERVER_API}/login`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(credentials),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw data;
+        }
+
+        //save token and user
+        this.saveToken(data.data.access_token);
+        this.saveUser(data.data.user);
+
+        return data;
+    }
+
+    //register
+    async register(registerData: RegisterData): Promise<AuthResponse> {
+        const response = await fetch(`${SERVER_API}/register`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(registerData),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw data;
+        }
+
+        // Save token and user
+        this.saveToken(data.data.access_token);
+        this.saveUser(data.data.user);
+
+        return data;
+    }
+
+
+    //Google login
+    async loginWithGoogle(googleData: GoogleLoginData): Promise<AuthResponse> {
+        const response = await fetch(`${SERVER_API}/login/google`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(googleData),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw data;
+        }
+
+        // Save token and user
+        this.saveToken(data.data.access_token);
+        this.saveUser(data.data.user);
+
+        return data;
+    }
+
+    // Facebook Login
+    async loginWithFacebook(facebookData: FacebookLoginData): Promise<AuthResponse> {
+        const response = await fetch(`${SERVER_API}/login/facebook`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(facebookData),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw data;
+        }
+
+        // Save token and user
+        this.saveToken(data.data.access_token);
+        this.saveUser(data.data.user);
+
+        return data;
+    }
+
+    // Logout
+    async logout(): Promise<void> {
+        try {
+            await fetch(`${SERVER_API}/logout`, {
+                method: 'POST',
+                headers: this.getHeaders(true),
+            });
+        } finally {
+            this.removeToken();
+        }
+    }
+
+    // Get Profile
+    async getProfile(): Promise<User> {
+        const response = await fetch(`${SERVER_API}/profile`, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw data;
+        }
+
+        this.saveUser(data.data);
+        return data.data;
+    }
+
+    // Check if user is authenticated
+    isAuthenticated(): boolean {
+        return !!this.getToken();
+    }
+}
+export default new authService();

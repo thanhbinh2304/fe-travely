@@ -3,14 +3,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useFacebookLogin } from '@/hooks/useFacebookLogin';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Modal, ModalHeader } from '@/components/shared/Modal';
 import SocialLoginButtons from './SocialLoginButton';
 import LoginForm from './EmailLoginForm';
 import RegisterForm from './RegisterForm';
 import LoginTerms from './LoginTerms';
-import { ApiError } from '@/app/services/api/authApi';
-import authApi from '@/app/services/api/authApi';
+import authService from '@/app/services/authService';
+import { ApiError } from '@/types/auth';
+
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -21,16 +23,55 @@ type ViewMode = 'login' | 'register';
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const router = useRouter();
+  const { login: facebookLogin } = useFacebookLogin();
   const [viewMode, setViewMode] = useState<ViewMode>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string>();
   const [registerErrors, setRegisterErrors] = useState<Record<string, string[]>>();
   const [registerGeneralError, setRegisterGeneralError] = useState<string>();
 
-  const handleGoogleLogin = useGoogleLogin({
+
+  const handleFacebookLogin = () => {
+    setIsLoading(true);
+    setLoginError(undefined);
+
+    facebookLogin(
+      async (userData, accessToken) => {
+        try {
+          // Send to Laravel backend
+          await authService.loginWithFacebook({
+            facebook_id: userData.id,
+            email: userData.email,
+            name: userData.name,
+          });
+
+          // Success
+          onClose();
+          router.refresh();
+        } catch (error) {
+          console.error('Facebook login error:', error);
+          const apiError = error as ApiError;
+          setLoginError(apiError.msg || 'Facebook login failed');
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      (error) => {
+        // Don't show error if user just cancelled the login
+        if (error.message !== 'Facebook login cancelled') {
+          console.error('Facebook OAuth error:', error);
+          setLoginError('Failed to connect with Facebook');
+        }
+        setIsLoading(false);
+      }
+    );
+  };
+
+  const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
         setIsLoading(true);
+        setLoginError(undefined);
 
         // 1. Get user info from Google
         const userInfoResponse = await fetch(
@@ -42,11 +83,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           }
         );
 
+        if (!userInfoResponse.ok) {
+          throw new Error('Failed to get user info from Google');
+        }
+
         const userInfo = await userInfoResponse.json();
 
         // 2. Send to Laravel backend
-        await authApi.loginWithGoogle({
-          google_id: userInfo.sub, // Google User ID
+        await authService.loginWithGoogle({
+          google_id: userInfo.sub,
           email: userInfo.email,
           name: userInfo.name,
         });
@@ -54,7 +99,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         // 3. Success - close modal and refresh
         onClose();
         router.refresh();
-        
+
       } catch (error) {
         console.error('Google login error:', error);
         const apiError = error as ApiError;
@@ -66,43 +111,27 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     onError: (error) => {
       console.error('Google OAuth error:', error);
       setLoginError('Failed to connect with Google');
+      setIsLoading(false);
     },
   });
 
-  const handleAppleLogin = async () => {
-    try {
-      setIsLoading(true);
-      console.log('Apple login - Not implemented');
-      alert('Apple login not implemented yet');
-    } catch (error) {
-      console.error('Apple login error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    googleLogin();
   };
 
-  const handleFacebookLogin = async () => {
-    try {
-      setIsLoading(true);
-      console.log('Facebook login - Implement OAuth flow');
-      alert('Please implement Facebook OAuth in production');
-    } catch (error) {
-      console.error('Facebook login error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+
 
   const handleLogin = async (email: string, password: string) => {
     try {
       setIsLoading(true);
       setLoginError(undefined);
 
-      await authApi.login({ email, password });
+      await authService.login({ email, password });
 
       onClose();
       router.refresh();
-      
+
     } catch (error) {
       const apiError = error as ApiError;
       setLoginError(apiError.msg || 'Login failed. Please try again.');
@@ -122,14 +151,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setRegisterErrors(undefined);
       setRegisterGeneralError(undefined);
 
-      await authApi.register(data);
+      await authService.register(data);
 
       onClose();
       router.refresh();
-      
+
     } catch (error) {
       const apiError = error as ApiError;
-      
+
       if (apiError.errors) {
         setRegisterErrors(apiError.errors);
       } else {
@@ -175,7 +204,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           {/* Info box */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <div className="flex items-start gap-2">
-              <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
               <div className="text-sm text-blue-800">
@@ -200,7 +229,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               {viewMode === 'login' ? 'Or log in with email' : 'Or sign up with email'}
             </h3>
             <p className="text-sm text-gray-600">
-              {viewMode === 'login' 
+              {viewMode === 'login'
                 ? 'Enter your credentials to access your account'
                 : 'Create a new account with your email address'
               }

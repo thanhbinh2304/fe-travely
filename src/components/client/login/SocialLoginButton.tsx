@@ -1,17 +1,15 @@
 'use client';
 
 import { SocialButton } from '@/components/shared/Button';
-import { GoogleIcon, AppleIcon, FacebookIcon } from './SocialIcons';
+import { GoogleIcon, FacebookIcon } from './SocialIcons';
 
 interface SocialLoginButtonsProps {
   onGoogleLogin: () => void;
-  onAppleLogin: () => void;
   onFacebookLogin: () => void;
 }
 
 export default function SocialLoginButtons({
   onGoogleLogin,
-  onAppleLogin,
   onFacebookLogin
 }: SocialLoginButtonsProps) {
   return (
@@ -20,11 +18,6 @@ export default function SocialLoginButtons({
         icon={<GoogleIcon />}
         text="Continue with Google"
         onClick={onGoogleLogin}
-      />
-      <SocialButton
-        icon={<AppleIcon />}
-        text="Continue with Apple"
-        onClick={onAppleLogin}
       />
       <SocialButton
         icon={<FacebookIcon />}

@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Heart, ShoppingCart, Globe, User, ChevronDown, LogIn, Bell, Sun, HelpCircle, ChevronRight } from 'lucide-react';
+import { Heart, ShoppingCart, Globe, User, ChevronDown, LogIn, Bell, Sun, HelpCircle, ChevronRight, Calendar, LogOut } from 'lucide-react';
 import { useScrollSearch } from '@/hooks/useScrollSearch';
 import SearchBar from './SearchBar';
+import {useAuth} from '@/hooks/useAuth';
 import { LoginModal } from '@/components/client/login';
 
 type DropdownType = 'places' | 'things' | 'trip' | 'profile' | null;
@@ -15,6 +16,7 @@ export default function HeaderClient() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { showSearchInHeader } = useScrollSearch();
+    const { user, isAuthenticated, logout } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -42,7 +44,13 @@ export default function HeaderClient() {
         setActiveDropdown(null); // Đóng dropdown
         setIsLoginModalOpen(true); // Mở modal
     };
-
+    const handleLogout = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        setActiveDropdown(null);
+        await logout();
+        // Optional: redirect to home
+        // router.push('/');
+    };
     return (
         <>
             <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white shadow-md">
@@ -175,7 +183,9 @@ export default function HeaderClient() {
                             >
                                 <button className="flex flex-col items-center group">
                                     <User className="w-5 h-5 text-gray-700 group-hover:text-blue-600 transition" />
-                                    <span className="text-xs text-gray-600 mt-1">Profile</span>
+                                    <span className="text-xs text-gray-600 mt-1">
+                                        {isAuthenticated ? user?.userName : 'Profile'}
+                                    </span>
                                 </button>
 
                                 {/* Profile Dropdown Menu */}
@@ -183,60 +193,157 @@ export default function HeaderClient() {
                                     <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl py-4 border border-gray-100">
                                         {/* Header */}
                                         <div className="px-4 pb-3 border-b border-gray-100">
-                                            <h3 className="text-lg font-bold text-gray-900">Profile</h3>
+                                            <div className="text-lg font-bold text-gray-900">
+                                                {isAuthenticated ? (
+                                                    <>
+                                                        <h3 className="text-lg font-bold text-gray-900">{user?.userName}</h3>
+                                                        <p className="text-sm text-gray-500">{user?.email}</p>
+                                                    </>
+                                                ) : (
+                                                    <h3 className="text-lg font-bold text-gray-900">Profile</h3>
+                                                )}
+                                            </div>
                                         </div>
 
                                         {/* Menu Items */}
                                         <div className="py-2">
-                                            {/* Log in or sign up - Mở Modal */}
-                                            <button
-                                                onClick={handleLoginClick}
-                                                className="w-full flex items-center px-4 py-3 hover:bg-gray-50 transition group"
-                                            >
-                                                <LogIn className="w-5 h-5 text-gray-600 mr-3" />
-                                                <span className="text-gray-700 font-medium group-hover:text-blue-600">
-                                                    Log in or sign up
-                                                </span>
-                                            </button>
+                                            {isAuthenticated ? (
+                                                <>
+                                                    {/* My Profile */}
+                                                    <Link
+                                                        href="/profile"
+                                                        className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition group"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <User className="w-5 h-5 text-gray-600 mr-3" />
+                                                            <span className="text-gray-700 font-medium group-hover:text-blue-600">
+                                                                My Profile
+                                                            </span>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                                                    </Link>
 
-                                            {/* Updates */}
-                                            <Link
-                                                href="/updates"
-                                                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition group"
-                                            >
-                                                <div className="flex items-center">
-                                                    <Bell className="w-5 h-5 text-gray-600 mr-3" />
-                                                    <span className="text-gray-700 font-medium group-hover:text-blue-600">
-                                                        Updates
-                                                    </span>
-                                                </div>
-                                                <ChevronRight className="w-4 h-4 text-gray-400" />
-                                            </Link>
+                                                    {/* My Bookings */}
+                                                    <Link
+                                                        href="/bookings"
+                                                        className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition group"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <Calendar className="w-5 h-5 text-gray-600 mr-3" />
+                                                            <span className="text-gray-700 font-medium group-hover:text-blue-600">
+                                                                My Bookings
+                                                            </span>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                                                    </Link>
 
-                                            {/* Appearance */}
-                                            <Link
-                                                href="/appearance"
-                                                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition group"
-                                            >
-                                                <div className="flex items-center">
-                                                    <Sun className="w-5 h-5 text-gray-600 mr-3" />
-                                                    <span className="text-gray-700 font-medium group-hover:text-blue-600">
-                                                        Appearance
-                                                    </span>
-                                                </div>
-                                                <span className="text-sm text-gray-500">Always light</span>
-                                            </Link>
+                                                    {/* Updates */}
+                                                    <Link
+                                                        href="/updates"
+                                                        className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition group"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <Bell className="w-5 h-5 text-gray-600 mr-3" />
+                                                            <span className="text-gray-700 font-medium group-hover:text-blue-600">
+                                                                Updates
+                                                            </span>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                                                    </Link>
 
-                                            {/* Support */}
-                                            <Link
-                                                href="/support"
-                                                className="flex items-center px-4 py-3 hover:bg-gray-50 transition group"
-                                            >
-                                                <HelpCircle className="w-5 h-5 text-gray-600 mr-3" />
-                                                <span className="text-gray-700 font-medium group-hover:text-blue-600">
-                                                    Support
-                                                </span>
-                                            </Link>
+                                                    {/* Appearance */}
+                                                    <Link
+                                                        href="/appearance"
+                                                        className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition group"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <Sun className="w-5 h-5 text-gray-600 mr-3" />
+                                                            <span className="text-gray-700 font-medium group-hover:text-blue-600">
+                                                                Appearance
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-sm text-gray-500">Always light</span>
+                                                    </Link>
+
+                                                    {/* Support */}
+                                                    <Link
+                                                        href="/support"
+                                                        className="flex items-center px-4 py-3 hover:bg-gray-50 transition group"
+                                                    >
+                                                        <HelpCircle className="w-5 h-5 text-gray-600 mr-3" />
+                                                        <span className="text-gray-700 font-medium group-hover:text-blue-600">
+                                                            Support
+                                                        </span>
+                                                    </Link>
+
+                                                    {/* Divider */}
+                                                    <div className="my-2 border-t border-gray-200"></div>
+
+                                                    {/* Logout */}
+                                                    <button
+                                                        onClick={handleLogout}
+                                                        className="w-full flex items-center px-4 py-3 hover:bg-red-50 transition group"
+                                                    >
+                                                        <LogOut className="w-5 h-5 text-red-600 mr-3" />
+                                                        <span className="text-red-600 font-medium">
+                                                            Log out
+                                                        </span>
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {/* Log in or sign up */}
+                                                    <button
+                                                        onClick={handleLoginClick}
+                                                        className="w-full flex items-center px-4 py-3 hover:bg-gray-50 transition group"
+                                                    >
+                                                        <User className="w-5 h-5 text-gray-600 mr-3" />
+                                                        <span className="text-gray-700 font-medium group-hover:text-blue-600">
+                                                            Log in or sign up
+                                                        </span>
+                                                    </button>
+
+                                                    {/* Updates */}
+                                                    <Link
+                                                        href="/updates"
+                                                        className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition group"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <Bell className="w-5 h-5 text-gray-600 mr-3" />
+                                                            <span className="text-gray-700 font-medium group-hover:text-blue-600">
+                                                                Updates
+                                                            </span>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                                                    </Link>
+
+                                                    {/* Appearance */}
+                                                    <Link
+                                                        href="/appearance"
+                                                        className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition group"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <Sun className="w-5 h-5 text-gray-600 mr-3" />
+                                                            <span className="text-gray-700 font-medium group-hover:text-blue-600">
+                                                                Appearance
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-sm text-gray-500">Always light</span>
+                                                    </Link>
+
+                                                    {/* Support */}
+                                                    <Link
+                                                        href="/support"
+                                                        className="flex items-center px-4 py-3 hover:bg-gray-50 transition group"
+                                                    >
+                                                        <HelpCircle className="w-5 h-5 text-gray-600 mr-3" />
+                                                        <span className="text-gray-700 font-medium group-hover:text-blue-600">
+                                                            Support
+                                                        </span>
+                                                    </Link>
+                                                </>
+                                            )}
+                                    
                                         </div>
                                     </div>
                                 )}

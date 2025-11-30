@@ -29,9 +29,10 @@ export interface TourImage{
     createdAt?: string;
 }
 export interface Itinerary{
-    itinararyID: string;
+    itineraryID: string;
     tourID: string;
     dayNumber: number;
+    destination: string;
     activity: string;
     createdAt?: string;
 }

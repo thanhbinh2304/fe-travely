@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import authApi from '@/app/services/authService';
+import authApi from '@/app/services/authServiceProvider';
 
 export default function FacebookCallbackPage() {
     const router = useRouter();

@@ -1,7 +1,7 @@
 import { StringToBoolean } from "class-variance-authority/types";
 import { API_BASE_URL } from "../config/api";
 import { User, LoginCredentials, RegisterData, AuthResponse, GoogleLoginData, FacebookLoginData } from "../../types/auth";
-const SERVER_API = process.env.SERVER_API || 'http://localhost:8000/api';
+const SERVER_API = process.env.NEXT_PUBLIC_SERVER_API || 'http://localhost:8000/api';
 
 class authService {
     private getHeaders(includeAuth = false) {
@@ -19,21 +19,50 @@ class authService {
         return headers;
     }
 
-    // get token from localStorage
+    // get token from localStorage and cookie
     getToken(): string | null {
         if (typeof window === 'undefined') return null;
+        // Ưu tiên lấy từ cookie, fallback về localStorage
+        const cookieToken = this.getCookie('access_token');
+        if (cookieToken) return cookieToken;
         return localStorage.getItem('access_token');
     }
-    //save token to localStorage
+
+    // Helper để lấy cookie
+    private getCookie(name: string): string | null {
+        if (typeof document === 'undefined') return null;
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+        return null;
+    }
+
+    // Helper để set cookie
+    private setCookie(name: string, value: string, days = 7): void {
+        if (typeof document === 'undefined') return;
+        const expires = new Date();
+        expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+    }
+
+    // Helper để xóa cookie
+    private deleteCookie(name: string): void {
+        if (typeof document === 'undefined') return;
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+    }
+
+    //save token to localStorage và cookie
     saveToken(token: string): void {
         if (typeof window === 'undefined') return;
         localStorage.setItem('access_token', token);
+        this.setCookie('access_token', token, 7); // Lưu 7 ngày
     }
-    //remove token from localStorage 
+    //remove token from localStorage và cookie
     removeToken(): void {
         if (typeof window === 'undefined') return;
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
+        this.deleteCookie('access_token');
     }
 
     //save user to localStorage
@@ -51,22 +80,62 @@ class authService {
 
     //Login
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
-        const response = await fetch(`${SERVER_API}/login`, {
-            method: 'POST',
-            headers: this.getHeaders(),
-            body: JSON.stringify(credentials),
-        });
+        console.log('Login request to:', `${SERVER_API}/login`);
+        console.log('Login credentials:', credentials);
 
-        const data = await response.json();
-        if (!response.ok) {
-            throw data;
+        try {
+            const response = await fetch(`${SERVER_API}/login`, {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify(credentials),
+                mode: 'cors',
+                // Bỏ credentials: 'include' vì backend dùng wildcard CORS
+            });
+
+            console.log('Login response status:', response.status);
+            console.log('Login response headers:', Object.fromEntries(response.headers.entries()));
+
+            // Check if response has content
+            const contentType = response.headers.get('content-type');
+            console.log('Content-Type:', contentType);
+
+            const responseText = await response.text();
+            console.log('Raw response text:', responseText);
+
+            let data;
+            try {
+                data = responseText ? JSON.parse(responseText) : {};
+            } catch (parseError) {
+                console.error('Failed to parse JSON:', parseError);
+                throw {
+                    success: false,
+                    msg: 'Invalid response from server. Response: ' + responseText.substring(0, 200)
+                };
+            }
+
+            console.log('Parsed response data:', data);
+
+            if (!response.ok) {
+                console.error('Login failed with status:', response.status, 'data:', data);
+                throw data;
+            }
+
+            //save token and user
+            this.saveToken(data.data.access_token);
+            this.saveUser(data.data.user);
+
+            return data;
+        } catch (error) {
+            // Network error or fetch failed
+            if (error instanceof TypeError) {
+                console.error('Network error:', error);
+                throw {
+                    success: false,
+                    msg: 'Cannot connect to server. Please check if backend is running.'
+                };
+            }
+            throw error;
         }
-
-        //save token and user
-        this.saveToken(data.data.access_token);
-        this.saveUser(data.data.user);
-
-        return data;
     }
 
     //register

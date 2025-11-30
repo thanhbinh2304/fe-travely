@@ -1,5 +1,5 @@
 export interface LoginCredentials {
-    email: string;
+    login: string;  // Backend expects 'login' field (email or username)
     password: string;
 }
 
@@ -9,12 +9,12 @@ export interface RegisterData {
     password: string;
     password_confirmation: string;
 }
-export interface GoogleLoginData{
+export interface GoogleLoginData {
     google_id: string;
     email: string;
     name?: string;
 }
-export interface FacebookLoginData{
+export interface FacebookLoginData {
     facebook_id: string;
     email: String;
     name?: string;

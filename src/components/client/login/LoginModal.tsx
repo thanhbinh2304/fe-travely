@@ -10,7 +10,7 @@ import SocialLoginButtons from './SocialLoginButton';
 import LoginForm from './EmailLoginForm';
 import RegisterForm from './RegisterForm';
 import LoginTerms from './LoginTerms';
-import authService from '@/app/services/authService';
+import authService from '@/app/services/authServiceProvider';
 import { ApiError } from '@/types/auth';
 
 
@@ -122,19 +122,35 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
 
 
-  const handleLogin = async (email: string, password: string) => {
+  const handleLogin = async (login: string, password: string) => {
     try {
       setIsLoading(true);
       setLoginError(undefined);
 
-      await authService.login({ email, password });
+      console.log('Attempting login with:', { login, password: '***' });
+      const response = await authService.login({ login, password });
+      console.log('Login successful:', response);
 
       onClose();
-      router.refresh();
+
+      // Redirect admin to dashboard, regular users stay on current page
+      if (response.data.user.role_id === 1) {
+        router.push('/dashboard');
+      } else {
+        router.refresh();
+      }
 
     } catch (error) {
+      console.error('Login error details:', error);
       const apiError = error as ApiError;
-      setLoginError(apiError.msg || 'Login failed. Please try again.');
+
+      // Xử lý validation errors từ Laravel
+      if (apiError.errors) {
+        const errorMessages = Object.values(apiError.errors).flat();
+        setLoginError(errorMessages.join(', '));
+      } else {
+        setLoginError(apiError.msg || 'Login failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

@@ -1,14 +1,18 @@
 'use client';
-import {Tour} from '@/types/tour';
+import { Tour } from '@/types/tour';
 import TourCard from '@/components/shared/Card/TourCard';
 
 interface TourGridProps {
-    title?: string;
-    tours: Tour[];
-    onAddToWishlist?: (tourID: string) => void;
+  title?: string;
+  tours: Tour[] | any;
+  onAddToWishlist?: (tourID: string) => void;
 }
+
 export default function TourGrid({ title, tours, onAddToWishlist }: TourGridProps) {
-  if (tours.length === 0) {
+  // normalize incoming `tours` which may be an array or a paginated envelope
+  const tourList: Tour[] = Array.isArray(tours) ? tours : (tours?.data ?? []);
+
+  if (tourList.length === 0) {
     return (
       <section className="py-12">
         <div className="container mx-auto px-4">
@@ -35,7 +39,7 @@ export default function TourGrid({ title, tours, onAddToWishlist }: TourGridProp
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {tours.map((tour) => (
+          {tourList.map((tour) => (
             <TourCard
               key={tour.tourID}
               tour={tour}

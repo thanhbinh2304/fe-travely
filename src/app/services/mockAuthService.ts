@@ -91,7 +91,7 @@ class MockAuthService {
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Find user by username or email
-        const user = MOCK_USERS.find(u => 
+        const user = MOCK_USERS.find(u =>
             u.userName === credentials.login || u.email === credentials.login
         );
 
@@ -137,7 +137,7 @@ class MockAuthService {
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Check if username or email already exists
-        const existingUser = MOCK_USERS.find(u => 
+        const existingUser = MOCK_USERS.find(u =>
             u.userName === registerData.name || u.email === registerData.email
         );
 
@@ -180,7 +180,7 @@ class MockAuthService {
     async getProfile(): Promise<User> {
         console.log('[MOCK MODE] Getting profile');
         await new Promise(resolve => setTimeout(resolve, 200));
-        
+
         const user = this.getUser();
         if (!user) {
             throw {

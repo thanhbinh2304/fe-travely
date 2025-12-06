@@ -1,15 +1,20 @@
 import { SiteHeader } from "@/components/site-header"
+import { UsersDataTable } from "./UsersDataTable"
+import { userColumns } from "./columns"
+import { mockUsersData } from "./mockUsersData"
 
 export default function UsersPage() {
     return (
         <>
             <SiteHeader title="Users Management" />
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold">Users Management</h1>
-                </div>
                 <div className="rounded-lg border bg-card p-6">
-                    <p className="text-muted-foreground">User management content coming soon...</p>
+                    <UsersDataTable
+                        columns={userColumns}
+                        data={mockUsersData}
+                        searchKey="userName"
+                        searchPlaceholder="Tìm kiếm theo tên người dùng..."
+                    />
                 </div>
             </div>
         </>

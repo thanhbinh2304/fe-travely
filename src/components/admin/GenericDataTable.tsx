@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import {
     ColumnDef,
     ColumnFiltersState,
@@ -46,19 +47,24 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
-interface DataTableProps<TData, TValue> {
+interface GenericDataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     searchKey?: string
     searchPlaceholder?: string
+    addNewUrl?: string
+    addNewLabel?: string
 }
 
-export function UsersDataTable<TData, TValue>({
+export function GenericDataTable<TData, TValue>({
     columns,
     data,
-    searchKey = "userName",
-    searchPlaceholder = "Tìm kiếm theo tên...",
-}: DataTableProps<TData, TValue>) {
+    searchKey,
+    searchPlaceholder = "Tìm kiếm...",
+    addNewUrl,
+    addNewLabel = "Thêm mới",
+}: GenericDataTableProps<TData, TValue>) {
+    const router = useRouter()
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -93,20 +99,24 @@ export function UsersDataTable<TData, TValue>({
             {/* Toolbar */}
             <div className="flex items-center justify-between gap-4">
                 <div className="flex flex-1 items-center gap-2">
-                    <Input
-                        placeholder={searchPlaceholder}
-                        value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-                        onChange={(event) =>
-                            table.getColumn(searchKey)?.setFilterValue(event.target.value)
-                        }
-                        className="h-9 w-full max-w-sm"
-                    />
+                    {searchKey && (
+                        <Input
+                            placeholder={searchPlaceholder}
+                            value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
+                            onChange={(event) =>
+                                table.getColumn(searchKey)?.setFilterValue(event.target.value)
+                            }
+                            className="h-9 w-full max-w-sm"
+                        />
+                    )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button size="sm" className="h-9">
-                        <IconPlus className="mr-2 h-4 w-4" />
-                        Thêm người dùng
-                    </Button>
+                    {addNewUrl && (
+                        <Button size="sm" className="h-9" onClick={() => router.push(addNewUrl)}>
+                            <IconPlus className="mr-2 h-4 w-4" />
+                            {addNewLabel}
+                        </Button>
+                    )}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm" className="h-9">

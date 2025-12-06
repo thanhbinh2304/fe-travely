@@ -11,6 +11,10 @@ import {
     IconUser,
     IconCrown,
     IconAlertCircle,
+    IconEye,
+    IconEdit,
+    IconTrash,
+    IconBan,
 } from "@tabler/icons-react"
 import { toast } from "sonner"
 
@@ -198,6 +202,7 @@ function UserActionsCell({ user }: { user: UserManagement }) {
                         router.push(`/dashboard/users/${user.userID}`)
                     }}
                 >
+                    <IconEye className="mr-2 h-4 w-4" />
                     Xem chi tiết
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -205,6 +210,7 @@ function UserActionsCell({ user }: { user: UserManagement }) {
                         toast.success(`Editing ${user.userName}`)
                     }}
                 >
+                    <IconEdit className="mr-2 h-4 w-4" />
                     Chỉnh sửa
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -214,6 +220,7 @@ function UserActionsCell({ user }: { user: UserManagement }) {
                             toast.success(`Unban user ${user.userName}`)
                         }}
                     >
+                        <IconCircleCheckFilled className="mr-2 h-4 w-4" />
                         Gỡ ban
                     </DropdownMenuItem>
                 ) : (
@@ -223,6 +230,7 @@ function UserActionsCell({ user }: { user: UserManagement }) {
                         }}
                         className="text-orange-600"
                     >
+                        <IconBan className="mr-2 h-4 w-4" />
                         Ban người dùng
                     </DropdownMenuItem>
                 )}
@@ -232,6 +240,7 @@ function UserActionsCell({ user }: { user: UserManagement }) {
                     }}
                     className="text-red-600"
                 >
+                    <IconTrash className="mr-2 h-4 w-4" />
                     Xóa người dùng
                 </DropdownMenuItem>
             </DropdownMenuContent>

@@ -9,6 +9,10 @@ import {
     IconCircleXFilled,
     IconStar,
     IconEye,
+    IconEdit,
+    IconTrash,
+    IconBan,
+    IconCheck,
 } from "@tabler/icons-react"
 import { toast } from "sonner"
 
@@ -179,6 +183,7 @@ function TourActionsCell({ tour }: { tour: Tour }) {
                         router.push(`/dashboard/tours/${tour.tourID}`)
                     }}
                 >
+                    <IconEye className="mr-2 h-4 w-4" />
                     Xem chi tiết
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -186,6 +191,7 @@ function TourActionsCell({ tour }: { tour: Tour }) {
                         toast.success(`Editing tour: ${tour.title}`)
                     }}
                 >
+                    <IconEdit className="mr-2 h-4 w-4" />
                     Chỉnh sửa
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -196,6 +202,7 @@ function TourActionsCell({ tour }: { tour: Tour }) {
                         }}
                         className="text-orange-600"
                     >
+                        <IconBan className="mr-2 h-4 w-4" />
                         Đóng tour
                     </DropdownMenuItem>
                 ) : (
@@ -204,6 +211,7 @@ function TourActionsCell({ tour }: { tour: Tour }) {
                             toast.success(`Mở tour: ${tour.title}`)
                         }}
                     >
+                        <IconCheck className="mr-2 h-4 w-4" />
                         Mở tour
                     </DropdownMenuItem>
                 )}
@@ -213,6 +221,7 @@ function TourActionsCell({ tour }: { tour: Tour }) {
                     }}
                     className="text-red-600"
                 >
+                    <IconTrash className="mr-2 h-4 w-4" />
                     Xóa tour
                 </DropdownMenuItem>
             </DropdownMenuContent>

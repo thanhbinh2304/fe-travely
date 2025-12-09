@@ -21,6 +21,7 @@ import {
     IconChevronsRight,
     IconLayoutColumns,
     IconPlus,
+    IconTrash,
 } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
@@ -54,6 +55,9 @@ interface GenericDataTableProps<TData, TValue> {
     searchPlaceholder?: string
     addNewUrl?: string
     addNewLabel?: string
+    onSelectedRowsChange?: (rows: TData[]) => void
+    selectedCount?: number
+    onDeleteSelected?: () => void
 }
 
 export function GenericDataTable<TData, TValue>({
@@ -63,6 +67,9 @@ export function GenericDataTable<TData, TValue>({
     searchPlaceholder = "Tìm kiếm...",
     addNewUrl,
     addNewLabel = "Thêm mới",
+    onSelectedRowsChange,
+    selectedCount = 0,
+    onDeleteSelected,
 }: GenericDataTableProps<TData, TValue>) {
     const router = useRouter()
     const [sorting, setSorting] = React.useState<SortingState>([])
@@ -94,6 +101,23 @@ export function GenericDataTable<TData, TValue>({
         },
     })
 
+    // Notify parent of selected rows changes
+    React.useEffect(() => {
+        if (onSelectedRowsChange) {
+            const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original)
+            onSelectedRowsChange(selectedRows)
+        }
+    }, [rowSelection, onSelectedRowsChange, table])
+
+    // Reset selection when selectedCount becomes 0 (after delete)
+    const prevSelectedCountRef = React.useRef(selectedCount)
+    React.useEffect(() => {
+        if (prevSelectedCountRef.current > 0 && selectedCount === 0) {
+            setRowSelection({})
+        }
+        prevSelectedCountRef.current = selectedCount
+    }, [selectedCount])
+
     return (
         <div className="space-y-4">
             {/* Toolbar */}
@@ -111,6 +135,17 @@ export function GenericDataTable<TData, TValue>({
                     )}
                 </div>
                 <div className="flex items-center gap-2">
+                    {onDeleteSelected && selectedCount > 0 && (
+                        <Button
+                            size="sm"
+                            className="h-9"
+                            variant="destructive"
+                            onClick={onDeleteSelected}
+                        >
+                            <IconTrash className="mr-2 h-4 w-4" />
+                            Xóa ({selectedCount})
+                        </Button>
+                    )}
                     {addNewUrl && (
                         <Button size="sm" className="h-9" onClick={() => router.push(addNewUrl)}>
                             <IconPlus className="mr-2 h-4 w-4" />

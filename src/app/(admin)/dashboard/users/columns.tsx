@@ -98,91 +98,132 @@ const getStatusBadge = (status: string) => {
     }
 }
 
-export const userColumns: ColumnDef<UserManagement>[] = [
-    {
-        id: "select",
-        header: ({ table }) => (
-            <div className="flex items-center justify-center">
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected() ||
-                        (table.getIsSomePageRowsSelected() && "indeterminate")
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                />
-            </div>
-        ),
-        cell: ({ row }) => (
-            <div className="flex items-center justify-center">
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                />
-            </div>
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
-    {
-        accessorKey: "userName",
-        header: "Tên người dùng",
-        cell: ({ row }) => (
-            <div>
-                <div className="font-medium">{row.original.userName}</div>
-                <div className="text-xs text-muted-foreground">{row.original.email}</div>
-            </div>
-        ),
-        enableHiding: false,
-    },
-    {
-        accessorKey: "phoneNumber",
-        header: "Số điện thoại",
-        cell: ({ row }) => (
-            <div className="text-sm">{row.original.phoneNumber || 'N/A'}</div>
-        ),
-    },
-    {
-        accessorKey: "address",
-        header: "Địa chỉ",
-        cell: ({ row }) => (
-            <div className="text-sm max-w-[200px] truncate">
-                {row.original.address || 'N/A'}
-            </div>
-        ),
-    },
-    {
-        accessorKey: "roleName",
-        header: "Vai trò",
-        cell: ({ row }) => (
-            <Badge variant={getRoleBadgeVariant(row.original.role_id)}>
-                <span className="mr-1">{getRoleIcon(row.original.role_id)}</span>
-                {row.original.roleName}
-            </Badge>
-        ),
-        filterFn: (row, id, value) => {
-            return value.includes(row.getValue(id))
+export const userColumns = (
+    onStatusChange?: (userId: string, newStatus: 'active' | 'inactive') => void,
+    onDelete?: (userId: string) => void
+): ColumnDef<UserManagement>[] => [
+        {
+            id: "select",
+            header: ({ table }) => (
+                <div className="flex items-center justify-center">
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && "indeterminate")
+                        }
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                </div>
+            ),
+            cell: ({ row }) => (
+                <div className="flex items-center justify-center">
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                    />
+                </div>
+            ),
+            enableSorting: false,
+            enableHiding: false,
         },
-    },
-    {
-        accessorKey: "status",
-        header: "Trạng thái",
-        cell: ({ row }) => getStatusBadge(row.original.status),
-        filterFn: (row, id, value) => {
-            return value.includes(row.getValue(id))
+        {
+            accessorKey: "userName",
+            header: "Tên người dùng",
+            cell: ({ row }) => (
+                <div>
+                    <div className="font-medium">{row.original.userName}</div>
+                    <div className="text-xs text-muted-foreground">{row.original.email}</div>
+                </div>
+            ),
+            enableHiding: false,
         },
-    },
-    {
-        id: "actions",
-        header: "",
-        cell: ({ row }) => <UserActionsCell user={row.original} />,
-    },
-]
+        {
+            accessorKey: "phoneNumber",
+            header: "Số điện thoại",
+            cell: ({ row }) => (
+                <div className="text-sm">{row.original.phoneNumber || 'N/A'}</div>
+            ),
+        },
+        {
+            accessorKey: "address",
+            header: "Địa chỉ",
+            cell: ({ row }) => (
+                <div className="text-sm max-w-[200px] truncate">
+                    {row.original.address || 'N/A'}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "roleName",
+            header: "Vai trò",
+            cell: ({ row }) => (
+                <Badge variant={getRoleBadgeVariant(row.original.role_id)}>
+                    <span className="mr-1">{getRoleIcon(row.original.role_id)}</span>
+                    {row.original.roleName}
+                </Badge>
+            ),
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
+        },
+        {
+            accessorKey: "status",
+            header: "Trạng thái",
+            cell: ({ row }) => getStatusBadge(row.original.status),
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
+        },
+        {
+            id: "actions",
+            header: "",
+            cell: ({ row }) => <UserActionsCell user={row.original} onStatusChange={onStatusChange} onDelete={onDelete} />,
+        },
+    ]
 
 // Component riêng cho actions để sử dụng hooks
-function UserActionsCell({ user }: { user: UserManagement }) {
+function UserActionsCell({ user, onStatusChange, onDelete }: {
+    user: UserManagement,
+    onStatusChange?: (userId: string, newStatus: 'active' | 'inactive') => void,
+    onDelete?: (userId: string) => void
+}) {
     const router = useRouter()
+    const [isLoading, setIsLoading] = React.useState(false)
+
+    const handleToggleStatus = async () => {
+        // Show confirmation dialog
+        const action = user.status === 'inactive' ? 'gỡ ban' : 'ban'
+        const confirmed = window.confirm(
+            `Bạn có chắc chắn muốn ${action} người dùng "${user.userName}"?\n\n` +
+            `Hành động này sẽ ${user.status === 'inactive' ? 'mở khóa tài khoản và cho phép người dùng đăng nhập trở lại' : 'khóa tài khoản và ngăn người dùng đăng nhập'}.`
+        )
+
+        if (!confirmed) return
+
+        setIsLoading(true)
+
+        try {
+            const { userService } = await import('@/app/services/userService')
+            const result = await userService.toggleAccountStatus(user.userID)
+
+            const newStatus = user.status === 'inactive' ? 'active' : 'inactive'
+            toast.success(`Đã ${action} người dùng ${user.userName} thành công!`)
+
+            // Update local state instead of reload
+            onStatusChange?.(user.userID, newStatus)
+        } catch (error) {
+            console.error('[handleToggleStatus] Error:', error)
+            toast.error(`Không thể ${action} người dùng. Vui lòng thử lại.`)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleDelete = () => {
+        onDelete?.(user.userID)
+    }
 
     return (
         <DropdownMenu>
@@ -191,6 +232,7 @@ function UserActionsCell({ user }: { user: UserManagement }) {
                     variant="ghost"
                     className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
                     size="icon"
+                    disabled={isLoading}
                 >
                     <IconDotsVertical />
                     <span className="sr-only">Open menu</span>
@@ -198,50 +240,60 @@ function UserActionsCell({ user }: { user: UserManagement }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                    onClick={() => {
+                    onSelect={(e) => {
+                        e.preventDefault()
                         router.push(`/dashboard/users/${user.userID}`)
                     }}
+                    disabled={isLoading}
                 >
                     <IconEye className="mr-2 h-4 w-4" />
                     Xem chi tiết
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                    onClick={() => {
-                        toast.success(`Editing ${user.userName}`)
-                    }}
-                >
-                    <IconEdit className="mr-2 h-4 w-4" />
-                    Chỉnh sửa
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {user.status === 'banned' ? (
-                    <DropdownMenuItem
-                        onClick={() => {
-                            toast.success(`Unban user ${user.userName}`)
-                        }}
-                    >
-                        <IconCircleCheckFilled className="mr-2 h-4 w-4" />
-                        Gỡ ban
+                {user.status === 'inactive' ? (
+                    <DropdownMenuItem asChild>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleToggleStatus()
+                            }}
+                            disabled={isLoading}
+                            className="w-full"
+                        >
+                            <IconCircleCheckFilled className="mr-2 h-4 w-4" />
+                            {isLoading ? 'Đang xử lý...' : 'Gỡ ban'}
+                        </button>
                     </DropdownMenuItem>
                 ) : (
-                    <DropdownMenuItem
-                        onClick={() => {
-                            toast.warning(`Ban user ${user.userName}`)
-                        }}
-                        className="text-orange-600"
-                    >
-                        <IconBan className="mr-2 h-4 w-4" />
-                        Ban người dùng
+                    <DropdownMenuItem asChild>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleToggleStatus()
+                            }}
+                            disabled={isLoading}
+                            className="w-full text-orange-600"
+                        >
+                            <IconBan className="mr-2 h-4 w-4" />
+                            {isLoading ? 'Đang xử lý...' : 'Ban người dùng'}
+                        </button>
                     </DropdownMenuItem>
                 )}
-                <DropdownMenuItem
-                    onClick={() => {
-                        toast.error(`Deleted ${user.userName}`)
-                    }}
-                    className="text-red-600"
-                >
-                    <IconTrash className="mr-2 h-4 w-4" />
-                    Xóa người dùng
+                <DropdownMenuItem asChild>
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleDelete()
+                        }}
+                        disabled={isLoading}
+                        className="w-full text-red-600"
+                    >
+                        <IconTrash className="mr-2 h-4 w-4" />
+                        {isLoading ? 'Đang xóa...' : 'Xóa người dùng'}
+                    </button>
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

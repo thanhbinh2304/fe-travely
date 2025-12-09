@@ -4,10 +4,10 @@ import { useRouter } from "next/navigation"
 import { IconArrowLeft, IconEdit, IconTrash, IconBan } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { UserManagement } from "@/app/(admin)/dashboard/users/mockUsersData"
+import { UserDetailResponse } from "@/app/services/userService"
 
 interface UserDetailHeaderProps {
-    user: UserManagement
+    user: UserDetailResponse
 }
 
 export function UserDetailHeader({ user }: UserDetailHeaderProps) {
@@ -21,11 +21,11 @@ export function UserDetailHeader({ user }: UserDetailHeaderProps) {
                 onClick={() => router.push('/dashboard/users')}
             >
                 <IconArrowLeft className="mr-2 h-4 w-4" />
-                Quay lại
+                Quay lại danh sách
             </Button>
             <div className="flex-1">
-                <h1 className="text-2xl font-bold">{user.userName}</h1>
-                <p className="text-muted-foreground">ID: #{user.userID}</p>
+                <h1 className="text-2xl font-bold">{user.details.userName}</h1>
+                <p className="text-muted-foreground">ID: #{user.details.userID}</p>
             </div>
             <div className="flex gap-2">
                 <Button
@@ -36,11 +36,11 @@ export function UserDetailHeader({ user }: UserDetailHeaderProps) {
                     <IconEdit className="mr-2 h-4 w-4" />
                     Chỉnh sửa
                 </Button>
-                {user.status === 'banned' ? (
+                {user.details.status === 'banned' ? (
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => toast.success(`Unban ${user.userName}`)}
+                        onClick={() => toast.success(`Unban ${user.details.userName}`)}
                     >
                         Gỡ ban
                     </Button>
@@ -48,7 +48,7 @@ export function UserDetailHeader({ user }: UserDetailHeaderProps) {
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => toast.warning(`Ban ${user.userName}`)}
+                        onClick={() => toast.warning(`Ban ${user.details.userName}`)}
                     >
                         <IconBan className="mr-2 h-4 w-4" />
                         Ban
@@ -57,7 +57,7 @@ export function UserDetailHeader({ user }: UserDetailHeaderProps) {
                 <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => toast.error(`Delete ${user.userName}`)}
+                    onClick={() => toast.error(`Delete ${user.details.userName}`)}
                 >
                     <IconTrash className="mr-2 h-4 w-4" />
                     Xóa

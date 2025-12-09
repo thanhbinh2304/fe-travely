@@ -10,24 +10,35 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  useEffect(() => {
-    // Check if user is authenticated on mount
-    const checkAuth = async () => {
-      try {
-        if (authService.isAuthenticated()) {
-          const userData = await authService.getProfile();
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        authService.removeToken();
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
+  const checkAuth = async () => {
+    try {
+      if (authService.isAuthenticated()) {
+        const userData = await authService.getProfile();
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      authService.removeToken();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     checkAuth();
   }, []);
+
+  const refreshUser = async () => {
+    try {
+      if (authService.isAuthenticated()) {
+        const userData = await authService.getProfile();
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
+  };
 
   const logout = async () => {
     try {
@@ -50,5 +61,6 @@ export function useAuth() {
     isLoading,
     isAuthenticated: !!user,
     logout,
+    refreshUser,
   };
 }

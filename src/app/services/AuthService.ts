@@ -1,7 +1,7 @@
 import { StringToBoolean } from "class-variance-authority/types";
 import { API_BASE_URL } from "../config/api";
 import { User, LoginCredentials, RegisterData, AuthResponse, GoogleLoginData, FacebookLoginData } from "../../types/auth";
-const SERVER_API = process.env.NEXT_PUBLIC_SERVER_API || 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://localhost:8000/api';
 
 class authService {
     private getHeaders(includeAuth = false) {
@@ -80,11 +80,11 @@ class authService {
 
     //Login
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
-        console.log('Login request to:', `${SERVER_API}/login`);
+        console.log('Login request to:', `${API_URL}/login`);
         console.log('Login credentials:', credentials);
 
         try {
-            const response = await fetch(`${SERVER_API}/login`, {
+            const response = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 headers: this.getHeaders(),
                 body: JSON.stringify(credentials),
@@ -140,7 +140,7 @@ class authService {
 
     //register
     async register(registerData: RegisterData): Promise<AuthResponse> {
-        const response = await fetch(`${SERVER_API}/register`, {
+        const response = await fetch(`${API_URL}/register`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify(registerData),
@@ -162,7 +162,7 @@ class authService {
 
     //Google login
     async loginWithGoogle(googleData: GoogleLoginData): Promise<AuthResponse> {
-        const response = await fetch(`${SERVER_API}/login/google`, {
+        const response = await fetch(`${API_URL}/login/google`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify(googleData),
@@ -183,7 +183,7 @@ class authService {
 
     // Facebook Login
     async loginWithFacebook(facebookData: FacebookLoginData): Promise<AuthResponse> {
-        const response = await fetch(`${SERVER_API}/login/facebook`, {
+        const response = await fetch(`${API_URL}/login/facebook`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify(facebookData),
@@ -205,7 +205,7 @@ class authService {
     // Logout
     async logout(): Promise<void> {
         try {
-            await fetch(`${SERVER_API}/logout`, {
+            await fetch(`${API_URL}/logout`, {
                 method: 'POST',
                 headers: this.getHeaders(true),
             });
@@ -216,7 +216,7 @@ class authService {
 
     // Get Profile
     async getProfile(): Promise<User> {
-        const response = await fetch(`${SERVER_API}/profile`, {
+        const response = await fetch(`${API_URL}/profile`, {
             method: 'GET',
             headers: this.getHeaders(true),
         });

@@ -157,7 +157,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   };
 
   const handleRegister = async (data: {
-    name: string;
+    userName: string;
     email: string;
     password: string;
     password_confirmation: string;

@@ -1,27 +1,46 @@
 export interface Booking {
-    bookingID: string;
-    tourID: string;
+    bookingID: number;
+    tourID: number;
     userID: string;
     bookingDate: string;
     numAdults: number;
     numChildren: number;
     totalPrice: number;
-    paymentStatus: 'pending' | 'completed' | 'failed';
+    paymentStatus: 'pending' | 'paid' | 'refunded';
     bookingStatus: 'confirmed' | 'cancelled' | 'completed';
     specialRequests?: string;
-    createdAt?: string;
-    updatedAt?: string;
     // Relations
-    tourTitle?: string;
-    tourDestination?: string;
-    userName?: string;
-    userEmail?: string;
-    userPhone?: string;
+    user?: {
+        userID: string;
+        userName: string;
+        email: string;
+        phoneNumber?: string;
+    };
+    tour?: {
+        tourID: number;
+        title: string;
+        destination: string;
+        priceAdult: number;
+        priceChild: number;
+        images?: Array<{ imageURL: string }>;
+    };
+    checkout?: {
+        checkoutID: number;
+        paymentMethod: string;
+        amount: number;
+        paymentStatus: string;
+        paymentDate?: string;
+    };
+    invoice?: {
+        invoiceID: number;
+        amount: number;
+        dateIssued: string;
+        details?: any;
+    };
 }
 
 export interface CreateBookingData {
-    tourID: string;
-    userID: string;
+    tourID: number;
     bookingDate: string;
     numAdults: number;
     numChildren: number;
@@ -42,21 +61,24 @@ export interface UpdateBookingStatusData {
 }
 
 export interface UpdatePaymentStatusData {
-    paymentStatus: 'pending' | 'completed' | 'failed';
+    paymentStatus: 'pending' | 'paid' | 'refunded';
 }
 
 export interface BookingFilterParams {
     userID?: string;
-    tourID?: string;
-    paymentStatus?: 'pending' | 'completed' | 'failed';
+    tourID?: number;
+    paymentStatus?: 'pending' | 'paid' | 'refunded';
     bookingStatus?: 'confirmed' | 'cancelled' | 'completed';
-    startDate?: string;
-    endDate?: string;
+    start_date?: string;
+    end_date?: string;
+    search?: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
 }
 
 export interface BookingPaginationParams {
     page?: number;
-    limit?: number;
+    per_page?: number;
 }
 
 export interface ApiResponse<T> {

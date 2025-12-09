@@ -6,7 +6,7 @@ import { PrimaryButton } from '@/components/shared/Button';
 
 interface RegisterFormProps {
   onSubmit: (data: {
-    name: string;
+    userName: string;
     email: string;
     password: string;
     password_confirmation: string;
@@ -17,7 +17,7 @@ interface RegisterFormProps {
 }
 
 export default function RegisterForm({ onSubmit, isLoading, errors, generalError }: RegisterFormProps) {
-  const [name, setName] = useState('');
+  const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
@@ -25,7 +25,7 @@ export default function RegisterForm({ onSubmit, isLoading, errors, generalError
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     await onSubmit({
-      name,
+      userName,
       email,
       password,
       password_confirmation: passwordConfirmation,
@@ -49,8 +49,8 @@ export default function RegisterForm({ onSubmit, isLoading, errors, generalError
           id="userName"
           label="Username"
           type="text"
-          value={name}
-          onChange={setName}
+          value={userName}
+          onChange={setUserName}
           placeholder="Choose a username"
           required
         />
@@ -101,8 +101,8 @@ export default function RegisterForm({ onSubmit, isLoading, errors, generalError
         />
       </div>
 
-      <PrimaryButton 
-        text={isLoading ? "Creating account..." : "Create Account"} 
+      <PrimaryButton
+        text={isLoading ? "Creating account..." : "Create Account"}
         type="submit"
         disabled={isLoading}
       />

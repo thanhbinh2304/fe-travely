@@ -9,7 +9,7 @@ import {
     BookingPaginationParams
 } from "@/types/booking";
 
-const API_URL = process.env.SERVER_API || 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://localhost:8000/api';
 
 class BookingService {
     private getHeaders(includeAuth = false) {
@@ -18,7 +18,7 @@ class BookingService {
             'Accept': 'application/json',
         };
         if (includeAuth) {
-            const token = localStorage.getItem('access_token');
+            const token = this.getToken();
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
             }
@@ -26,18 +26,36 @@ class BookingService {
         return headers;
     }
 
-    // Get all bookings (Admin)
-    async index(params?: BookingPaginationParams & BookingFilterParams): Promise<ApiResponse<Booking[]>> {
+    private getToken(): string | null {
+        if (typeof window === 'undefined') return null;
+        const cookieToken = this.getCookie('access_token');
+        if (cookieToken) return cookieToken;
+        return localStorage.getItem('access_token');
+    }
+
+    private getCookie(name: string): string | null {
+        if (typeof document === 'undefined') return null;
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+        return null;
+    }
+
+    // ==================== USER METHODS ====================
+
+    // Get current user's bookings
+    async getUserBookings(params?: BookingPaginationParams & BookingFilterParams): Promise<ApiResponse<Booking[]>> {
         const queryParams = new URLSearchParams();
 
         if (params?.page) queryParams.append('page', params.page.toString());
-        if (params?.limit) queryParams.append('limit', params.limit.toString());
-        if (params?.userID) queryParams.append('userID', params.userID);
-        if (params?.tourID) queryParams.append('tourID', params.tourID);
-        if (params?.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
+        if (params?.per_page) queryParams.append('per_page', params.per_page.toString());
         if (params?.bookingStatus) queryParams.append('bookingStatus', params.bookingStatus);
-        if (params?.startDate) queryParams.append('startDate', params.startDate);
-        if (params?.endDate) queryParams.append('endDate', params.endDate);
+        if (params?.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
+        if (params?.start_date) queryParams.append('start_date', params.start_date);
+        if (params?.end_date) queryParams.append('end_date', params.end_date);
+        if (params?.search) queryParams.append('search', params.search);
+        if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+        if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
 
         const response = await fetch(`${API_URL}/bookings?${queryParams.toString()}`, {
             method: 'GET',
@@ -109,14 +127,40 @@ class BookingService {
         return data;
     }
 
-    // Get user's bookings
-    async getUserBookings(userID: string, params?: BookingPaginationParams): Promise<ApiResponse<Booking[]>> {
+    // Cancel user's booking
+    async cancelBooking(bookingID: string, reason?: string): Promise<ApiResponse<Booking>> {
+        const response = await fetch(`${API_URL}/bookings/${bookingID}/cancel`, {
+            method: 'POST',
+            headers: this.getHeaders(true),
+            body: JSON.stringify({ reason }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw data;
+        }
+        return data;
+    }
+
+    // ==================== ADMIN METHODS ====================
+
+    // Get all bookings (Admin)
+    async adminGetAllBookings(params?: BookingPaginationParams & BookingFilterParams): Promise<ApiResponse<Booking[]>> {
         const queryParams = new URLSearchParams();
 
         if (params?.page) queryParams.append('page', params.page.toString());
-        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.per_page) queryParams.append('per_page', params.per_page.toString());
+        if (params?.bookingStatus) queryParams.append('bookingStatus', params.bookingStatus);
+        if (params?.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
+        if (params?.userID) queryParams.append('userID', params.userID);
+        if (params?.tourID) queryParams.append('tourID', params.tourID.toString());
+        if (params?.start_date) queryParams.append('start_date', params.start_date);
+        if (params?.end_date) queryParams.append('end_date', params.end_date);
+        if (params?.search) queryParams.append('search', params.search);
+        if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+        if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
 
-        const response = await fetch(`${API_URL}/users/${userID}/bookings?${queryParams.toString()}`, {
+        const response = await fetch(`${API_URL}/admin/bookings?${queryParams.toString()}`, {
             method: 'GET',
             headers: this.getHeaders(true),
         });
@@ -128,16 +172,26 @@ class BookingService {
         return data;
     }
 
-    // Get tour's bookings
-    async getTourBookings(tourID: string, params?: BookingPaginationParams): Promise<ApiResponse<Booking[]>> {
-        const queryParams = new URLSearchParams();
-
-        if (params?.page) queryParams.append('page', params.page.toString());
-        if (params?.limit) queryParams.append('limit', params.limit.toString());
-
-        const response = await fetch(`${API_URL}/tours/${tourID}/bookings?${queryParams.toString()}`, {
-            method: 'GET',
+    // Confirm booking (Admin)
+    async confirmBooking(bookingID: string): Promise<ApiResponse<Booking>> {
+        const response = await fetch(`${API_URL}/bookings/${bookingID}/confirm`, {
+            method: 'POST',
             headers: this.getHeaders(true),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw data;
+        }
+        return data;
+    }
+
+    // Reject booking (Admin)
+    async rejectBooking(bookingID: string, reason: string): Promise<ApiResponse<Booking>> {
+        const response = await fetch(`${API_URL}/bookings/${bookingID}/reject`, {
+            method: 'POST',
+            headers: this.getHeaders(true),
+            body: JSON.stringify({ reason }),
         });
 
         const data = await response.json();
@@ -194,7 +248,7 @@ class BookingService {
 
     // Confirm payment
     async confirmPayment(bookingID: string): Promise<ApiResponse<Booking>> {
-        return this.updatePaymentStatus(bookingID, { paymentStatus: 'completed' });
+        return this.updatePaymentStatus(bookingID, { paymentStatus: 'paid' });
     }
 
     // Get booking statistics

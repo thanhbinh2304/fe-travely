@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Heart, ShoppingCart, Globe, User, ChevronDown, LogIn, Bell, Sun, HelpCircle, ChevronRight, Calendar, LogOut } from 'lucide-react';
 import { useScrollSearch } from '@/hooks/useScrollSearch';
 import SearchBar from './SearchBar';
-import {useAuth} from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/client/login';
 
 type DropdownType = 'places' | 'things' | 'trip' | 'profile' | null;
@@ -16,7 +16,7 @@ export default function HeaderClient() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { showSearchInHeader } = useScrollSearch();
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, logout, refreshUser } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -343,7 +343,7 @@ export default function HeaderClient() {
                                                     </Link>
                                                 </>
                                             )}
-                                    
+
                                         </div>
                                     </div>
                                 )}
@@ -354,9 +354,12 @@ export default function HeaderClient() {
             </header>
 
             {/* Login Modal */}
-            <LoginModal 
-                isOpen={isLoginModalOpen} 
-                onClose={() => setIsLoginModalOpen(false)} 
+            <LoginModal
+                isOpen={isLoginModalOpen}
+                onClose={() => {
+                    setIsLoginModalOpen(false);
+                    refreshUser(); // Refresh user state after login
+                }}
             />
         </>
     );

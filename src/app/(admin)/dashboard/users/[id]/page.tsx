@@ -1,35 +1,61 @@
-"use client"
+'use client'
 
-import { useParams, useRouter } from "next/navigation"
-import { IconArrowLeft, IconEdit, IconTrash, IconBan } from "@tabler/icons-react"
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 import { SiteHeader } from "@/components/site-header"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GenericDetailHeader } from "@/components/admin/GenericDetailHeader"
 import { UserDetailCards } from "@/components/admin/UserDetailCards"
-import { mockUsersData } from "../mockUsersData"
-import { toast } from "sonner"
+import { userService, UserDetailResponse } from "@/app/services/userService"
+import { UserDetailActions } from "./UserDetailActions"
+import { BackToListButton } from "./BackToListButton"
 
 export default function UserDetailPage() {
     const params = useParams()
-    const router = useRouter()
     const userId = params.id as string
 
-    // Tìm user theo ID
-    const user = mockUsersData.find(u => u.userID === userId)
+    const [user, setUser] = useState<UserDetailResponse | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
-    if (!user) {
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const userData = await userService.getUserById(userId)
+                setUser(userData)
+            } catch (err) {
+                console.error('Failed to fetch user:', err)
+                setError('Không thể tải thông tin người dùng')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchUser()
+    }, [userId])
+
+    if (loading) {
+        return (
+            <>
+                <SiteHeader title="Chi tiết người dùng" />
+                <div className="flex flex-1 flex-col items-center justify-center p-4">
+                    <div className="text-center">
+                        <p className="text-muted-foreground">Đang tải...</p>
+                    </div>
+                </div>
+            </>
+        )
+    }
+
+    if (error || !user) {
         return (
             <>
                 <SiteHeader title="User Not Found" />
                 <div className="flex flex-1 flex-col items-center justify-center p-4">
                     <div className="text-center">
                         <h2 className="text-2xl font-bold mb-2">Không tìm thấy người dùng</h2>
-                        <p className="text-muted-foreground mb-4">User ID: {userId}</p>
-                        <Button onClick={() => router.push('/dashboard/users')}>
-                            <IconArrowLeft className="mr-2 h-4 w-4" />
-                            Quay lại danh sách
-                        </Button>
+                        <p className="text-muted-foreground mb-4">{error || `User ID: ${userId}`}</p>
+                        <BackToListButton />
                     </div>
                 </div>
             </>
@@ -47,49 +73,23 @@ export default function UserDetailPage() {
         }
     }
 
+    const handleStatusChange = (newStatus: 'active' | 'inactive') => {
+        setUser(prev => {
+            if (!prev) return prev
+            return {
+                ...prev,
+                details: {
+                    ...prev.details,
+                    status: newStatus
+                }
+            }
+        })
+    }
+
     const statusBadge = (
-        <Badge className={getRoleColor(user.role_id)}>
+        <Badge className={getRoleColor(user.details.role_id)}>
             {user.roleName}
         </Badge>
-    )
-
-    const actions = (
-        <>
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => toast.success('Editing user...')}
-            >
-                <IconEdit className="mr-2 h-4 w-4" />
-                Chỉnh sửa
-            </Button>
-            {user.status === 'banned' ? (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toast.success(`Unban ${user.userName}`)}
-                >
-                    Gỡ ban
-                </Button>
-            ) : (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toast.warning(`Ban ${user.userName}`)}
-                >
-                    <IconBan className="mr-2 h-4 w-4" />
-                    Ban
-                </Button>
-            )}
-            <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => toast.error(`Delete ${user.userName}`)}
-            >
-                <IconTrash className="mr-2 h-4 w-4" />
-                Xóa
-            </Button>
-        </>
     )
 
     return (
@@ -97,11 +97,11 @@ export default function UserDetailPage() {
             <SiteHeader title="Chi tiết người dùng" />
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 <GenericDetailHeader
-                    title={user.userName}
-                    subtitle={`ID: #${user.userID}`}
+                    title={user.details.userName}
+                    subtitle={`ID: #${user.details.userID}`}
                     backUrl="/dashboard/users"
                     statusBadge={statusBadge}
-                    actions={actions}
+                    actions={<UserDetailActions user={user} onStatusChange={handleStatusChange} />}
                 />
                 <UserDetailCards user={user} />
             </div>

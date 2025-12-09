@@ -4,7 +4,7 @@ import { IconMail, IconPhone, IconMapPin, IconCalendar, IconClock, IconShoppingB
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { UserManagement } from "@/app/(admin)/dashboard/users/mockUsersData"
+import { UserDetailResponse } from "@/app/services/userService";
 
 // Helper functions
 const formatCurrency = (amount: number) => {
@@ -49,7 +49,7 @@ const getStatusColor = (status: string) => {
 }
 
 interface UserDetailCardsProps {
-    user: UserManagement
+    user: UserDetailResponse;
 }
 
 export function UserDetailCards({ user }: UserDetailCardsProps) {
@@ -67,7 +67,7 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                             <IconMail className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Email</p>
-                                <p className="text-sm">{user.email}</p>
+                                <p className="text-sm">{user.details.email}</p>
                             </div>
                         </div>
                         <Separator />
@@ -75,7 +75,7 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                             <IconPhone className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Số điện thoại</p>
-                                <p className="text-sm">{user.phoneNumber || 'Chưa cập nhật'}</p>
+                                <p className="text-sm">{user.details.phoneNumber || 'Chưa cập nhật'}</p>
                             </div>
                         </div>
                         <Separator />
@@ -83,7 +83,7 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                             <IconMapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Địa chỉ</p>
-                                <p className="text-sm">{user.address || 'Chưa cập nhật'}</p>
+                                <p className="text-sm">{user.details.address || 'Chưa cập nhật'}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -98,24 +98,24 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                     <CardContent className="space-y-4">
                         <div>
                             <p className="text-sm font-medium text-muted-foreground mb-2">Vai trò</p>
-                            <Badge className={getRoleColor(user.role_id)}>
+                            <Badge className={getRoleColor(user.details.role_id)}>
                                 {user.roleName}
                             </Badge>
                         </div>
                         <Separator />
                         <div>
                             <p className="text-sm font-medium text-muted-foreground mb-2">Trạng thái</p>
-                            <Badge className={getStatusColor(user.status)}>
-                                {user.status === 'active' && <IconCircleCheckFilled className="mr-1 h-3 w-3" />}
-                                {user.status === 'banned' && <IconCircleXFilled className="mr-1 h-3 w-3" />}
-                                {user.status === 'active' ? 'Hoạt động' : user.status === 'inactive' ? 'Không hoạt động' : 'Bị ban'}
+                            <Badge className={getStatusColor(user.details.status)}>
+                                {user.details.status === 'active' && <IconCircleCheckFilled className="mr-1 h-3 w-3" />}
+                                {user.details.status === 'banned' && <IconCircleXFilled className="mr-1 h-3 w-3" />}
+                                {user.details.status === 'active' ? 'Hoạt động' : user.details.status === 'inactive' ? 'Không hoạt động' : 'Bị ban'}
                             </Badge>
                         </div>
                         <Separator />
                         <div>
                             <p className="text-sm font-medium text-muted-foreground mb-2">Xác thực email</p>
                             <div className="flex items-center gap-2">
-                                {user.verified ? (
+                                {user.details.verified ? (
                                     <>
                                         <IconCircleCheckFilled className="h-5 w-5 text-green-500" />
                                         <span className="text-sm">Đã xác thực</span>
@@ -142,7 +142,7 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                             <IconShoppingBag className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Tổng số booking</p>
-                                <p className="text-2xl font-bold">{user.totalBookings}</p>
+                                <p className="text-2xl font-bold">{user.stats.total_bookings}</p>
                             </div>
                         </div>
                         <Separator />
@@ -150,7 +150,7 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                             <IconCurrencyDong className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Tổng chi tiêu</p>
-                                <p className="text-2xl font-bold">{formatCurrency(user.totalSpent)}</p>
+                                <p className="text-2xl font-bold">{formatCurrency(user.stats.total_spent)}</p>
                             </div>
                         </div>
                         <Separator />
@@ -159,8 +159,8 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Chi tiêu trung bình</p>
                                 <p className="text-lg font-semibold">
-                                    {user.totalBookings > 0
-                                        ? formatCurrency(user.totalSpent / user.totalBookings)
+                                    {user.stats.total_bookings > 0
+                                        ? formatCurrency(user.stats.total_spent / user.stats.total_bookings)
                                         : formatCurrency(0)}
                                 </p>
                             </div>
@@ -181,7 +181,7 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                             <IconCalendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Ngày đăng ký</p>
-                                <p className="text-sm">{formatDate(user.createdAt)}</p>
+                                <p className="text-sm">{formatDate(user.details.created_at)}</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">

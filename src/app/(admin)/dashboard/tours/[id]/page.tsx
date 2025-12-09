@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { IconArrowLeft, IconEdit, IconTrash, IconBan } from "@tabler/icons-react"
 import { SiteHeader } from "@/components/site-header"
@@ -7,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GenericDetailHeader } from "@/components/admin/GenericDetailHeader"
 import { TourDetailCards } from "@/components/admin/TourDetailCards"
-import { mockToursData } from "../mockToursData"
+import { tourService } from "@/app/services/tourService"
+import { Tour } from "@/types/tour"
 import { toast } from "sonner"
 
 export default function TourDetailPage() {
@@ -15,8 +17,68 @@ export default function TourDetailPage() {
     const router = useRouter()
     const tourId = params.id as string
 
-    // Tìm tour theo ID
-    const tour = mockToursData.find(t => t.tourID === tourId)
+    const [tour, setTour] = useState<Tour | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        fetchTourDetail()
+    }, [tourId])
+
+    const fetchTourDetail = async () => {
+        try {
+            setIsLoading(true)
+            const data = await tourService.getTourById(tourId)
+            setTour(data)
+        } catch (error) {
+            console.error('Error fetching tour:', error)
+            toast.error('Không thể tải thông tin tour')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleToggleAvailability = async () => {
+        if (!tour) return
+
+        try {
+            const updatedTour = await tourService.toggleAvailability(tourId)
+            setTour(updatedTour)
+            toast.success(updatedTour.availability ? 'Đã mở tour' : 'Đã đóng tour')
+        } catch (error) {
+            console.error('Error toggling availability:', error)
+            toast.error('Không thể thay đổi trạng thái tour')
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!tour) return
+
+        if (!confirm(`Bạn có chắc chắn muốn xóa tour "${tour.title}"?`)) {
+            return
+        }
+
+        try {
+            await tourService.deleteTour(tourId)
+            toast.success('Đã xóa tour thành công')
+            router.push('/dashboard/tours')
+        } catch (error) {
+            console.error('Error deleting tour:', error)
+            toast.error('Không thể xóa tour')
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <>
+                <SiteHeader title="Chi tiết tour" />
+                <div className="flex flex-1 flex-col items-center justify-center p-4">
+                    <div className="text-center">
+                        <p className="text-muted-foreground">Đang tải...</p>
+                    </div>
+                </div>
+            </>
+        )
+    }
 
     if (!tour) {
         return (
@@ -51,7 +113,7 @@ export default function TourDetailPage() {
             <Button
                 variant="outline"
                 size="sm"
-                onClick={() => toast.success('Editing tour...')}
+                onClick={() => router.push(`/dashboard/tours/${tourId}/edit`)}
             >
                 <IconEdit className="mr-2 h-4 w-4" />
                 Chỉnh sửa
@@ -60,7 +122,7 @@ export default function TourDetailPage() {
                 <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => toast.warning(`Đóng tour: ${tour.title}`)}
+                    onClick={handleToggleAvailability}
                 >
                     <IconBan className="mr-2 h-4 w-4" />
                     Đóng tour
@@ -69,7 +131,7 @@ export default function TourDetailPage() {
                 <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => toast.success(`Mở tour: ${tour.title}`)}
+                    onClick={handleToggleAvailability}
                 >
                     Mở tour
                 </Button>
@@ -77,7 +139,7 @@ export default function TourDetailPage() {
             <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => toast.error(`Delete tour: ${tour.title}`)}
+                onClick={handleDelete}
             >
                 <IconTrash className="mr-2 h-4 w-4" />
                 Xóa

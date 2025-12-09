@@ -45,7 +45,7 @@ class TourService {
         return null;
     }
 
-    //Get all tours with filters
+    //Get all tours with filters (Public)
     async index(filters?: TourFilters): Promise<ApiResponse<Tour[]>> {
         const queryParams = new URLSearchParams();
 
@@ -71,6 +71,60 @@ class TourService {
         return data;
     }
 
+    // Get all tours for admin (with auth)
+    async getAllTours(filters?: TourFilters): Promise<Tour[]> {
+        try {
+            const queryParams = new URLSearchParams();
+
+            if (filters?.page) queryParams.append('page', filters.page.toString());
+            if (filters?.per_page) queryParams.append('per_page', filters.per_page.toString());
+            if (filters?.destination) queryParams.append('destination', filters.destination);
+            if (filters?.availability !== undefined) queryParams.append('availability', filters.availability.toString());
+            if (filters?.min_price) queryParams.append('min_price', filters.min_price.toString());
+            if (filters?.max_price) queryParams.append('max_price', filters.max_price.toString());
+            if (filters?.start_date) queryParams.append('start_date', filters.start_date);
+            if (filters?.end_date) queryParams.append('end_date', filters.end_date);
+            if (filters?.sort_by) queryParams.append('sort_by', filters.sort_by);
+            if (filters?.sort_order) queryParams.append('sort_order', filters.sort_order);
+
+            const url = `${API_URL}/admin/tours${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+            console.log('Fetching tours from:', url);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: this.getHeaders(true),
+            });
+
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Response error:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Response data:', result);
+
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to fetch tours');
+            }
+
+            // Handle paginated response - Laravel returns data in data.data for pagination
+            if (result.data && result.data.data && Array.isArray(result.data.data)) {
+                return result.data.data;
+            } else if (Array.isArray(result.data)) {
+                return result.data;
+            } else {
+                console.warn('Unexpected data structure:', result);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching tours:', error);
+            throw error;
+        }
+    }
+
     // Save a new tour
     async store(tourData: CreateTourData): Promise<ApiResponse<Tour>> {
         const response = await fetch(`${API_URL}/tours`, {
@@ -85,7 +139,7 @@ class TourService {
         return data;
     }
 
-    //Show a tour details 
+    //Show a tour details (Public)
     async show(tourID: string): Promise<ApiResponse<Tour>> {
         const response = await fetch(`${API_URL}/tours/${tourID}`, {
             method: 'GET',
@@ -97,6 +151,37 @@ class TourService {
             throw data;
         }
         return data;
+    }
+
+    // Get tour by ID for admin (with auth)
+    async getTourById(tourID: string): Promise<Tour> {
+        try {
+            console.log('Fetching tour:', tourID);
+            const response = await fetch(`${API_URL}/admin/tours/${tourID}`, {
+                method: 'GET',
+                headers: this.getHeaders(true),
+            });
+
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Response error:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Tour detail response:', result);
+
+            if (!result.success || !result.data) {
+                throw new Error(result.message || 'Failed to fetch tour details');
+            }
+
+            return result.data;
+        } catch (error) {
+            console.error('Error fetching tour details:', error);
+            throw error;
+        }
     }
 
     async update(tourID: string, tourData: UpdateTourData): Promise<ApiResponse<Tour>> {
@@ -124,6 +209,30 @@ class TourService {
             throw data;
         }
         return data;
+    }
+
+    // Delete tour for admin (simplified)
+    async deleteTour(tourID: string): Promise<void> {
+        try {
+            const response = await fetch(`${API_URL}/tours/${tourID}`, {
+                method: 'DELETE',
+                headers: this.getHeaders(true),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to delete tour');
+            }
+        } catch (error) {
+            console.error('Error deleting tour:', error);
+            throw error;
+        }
     }
 
     //get featured tours
@@ -226,6 +335,37 @@ class TourService {
         }
 
         return data;
+    }
+
+    // Toggle tour availability for admin (simplified)
+    async toggleAvailability(tourID: string): Promise<Tour> {
+        try {
+            // First get current tour data
+            const tour = await this.getTourById(tourID);
+            const newAvailability = !tour.availability;
+
+            const response = await fetch(`${API_URL}/tours/${tourID}/availability`, {
+                method: 'PATCH',
+                headers: this.getHeaders(true),
+                body: JSON.stringify({ availability: newAvailability }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+
+            if (!result.success || !result.data) {
+                throw new Error(result.message || 'Failed to toggle availability');
+            }
+
+            return result.data;
+        } catch (error) {
+            console.error('Error toggling availability:', error);
+            throw error;
+        }
     }
 
     //update quantity

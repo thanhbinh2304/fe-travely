@@ -52,9 +52,11 @@ export function TourDetailCards({ tour }: TourDetailCardsProps) {
     // Debug logging
     console.log('Tour data:', tour);
     console.log('Tour images:', tourImages);
+    console.log('Tour createdAt:', tour.createdAt);
+    console.log('Tour updatedAt:', tour.updatedAt);
 
     // Lấy lịch trình từ API
-    const itineraries = tour.itineraries || []
+    const itineraries = tour.itineraries || [];
 
     return (
         <>

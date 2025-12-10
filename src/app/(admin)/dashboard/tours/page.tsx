@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { GenericDataTable } from "@/components/admin/GenericDataTable"
-import { tourColumns } from "./columns"
+import { createTourColumns } from "./columns"
 import { tourService } from "@/app/services/tourService"
 import { Tour } from "@/types/tour"
 import { toast } from "sonner"
@@ -29,6 +29,10 @@ export default function ToursPage() {
         }
     }
 
+    const handleRefresh = () => {
+        fetchTours()
+    }
+
     if (isLoading) {
         return (
             <>
@@ -50,7 +54,7 @@ export default function ToursPage() {
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 <div className="rounded-lg border bg-card p-6">
                     <GenericDataTable
-                        columns={tourColumns}
+                        columns={createTourColumns(handleRefresh)}
                         data={tours}
                         searchKey="title"
                         searchPlaceholder="Tìm kiếm theo tên tour..."

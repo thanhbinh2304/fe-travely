@@ -117,6 +117,22 @@ export default function EditTourPage() {
         const files = e.target.files
         if (files && files.length > 0) {
             const newFiles = Array.from(files)
+
+            // Validate files
+            const maxSize = 5 * 1024 * 1024 // 5MB
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp']
+
+            for (const file of newFiles) {
+                if (!allowedTypes.includes(file.type)) {
+                    toast.error(`File ${file.name} không đúng định dạng. Chỉ chấp nhận: JPG, PNG, GIF, WEBP`)
+                    return
+                }
+                if (file.size > maxSize) {
+                    toast.error(`File ${file.name} quá lớn. Kích thước tối đa: 5MB`)
+                    return
+                }
+            }
+
             setImageFiles([...imageFiles, ...newFiles])
 
             // Create preview URLs
@@ -165,6 +181,9 @@ export default function EditTourPage() {
                 itineraries: itineraries.filter(item => item.destination && item.activity)
             }
 
+            console.log('Tour data to submit:', tourData);
+            console.log('Start date:', startDate, 'End date:', endDate);
+
             // Only include images if there are changes
             if (imageFiles.length > 0 || existingImages.length > 0) {
                 tourData.images = existingImages;
@@ -181,11 +200,35 @@ export default function EditTourPage() {
             }
         } catch (error: any) {
             console.error("Error updating tour:", error)
-            console.error("Validation errors:", error.errors)
+
             if (error.errors) {
-                // Handle validation errors from backend
-                const errorMessages = Object.values(error.errors).flat().join(", ")
-                toast.error(errorMessages as string)
+                // Map validation errors to user-friendly messages
+                const errorMap: Record<string, string> = {
+                    'title': 'Tiêu đề',
+                    'description': 'Mô tả',
+                    'destination': 'Điểm đến',
+                    'priceAdult': 'Giá người lớn',
+                    'priceChild': 'Giá trẻ em',
+                    'quantity': 'Số lượng',
+                    'startDate': 'Ngày bắt đầu',
+                    'endDate': 'Ngày kết thúc',
+                    'availability': 'Trạng thái',
+                    'images': 'Hình ảnh',
+                    'itineraries': 'Lịch trình'
+                }
+
+                // Display each error with field name
+                Object.entries(error.errors).forEach(([field, messages]) => {
+                    // Handle image file errors (e.g., image_files.0, image_files.1)
+                    let fieldName = errorMap[field] || field
+                    if (field.startsWith('image_files.')) {
+                        const index = field.split('.')[1]
+                        fieldName = `Hình ảnh ${parseInt(index) + 1}`
+                    }
+
+                    const errorMessages = (messages as string[]).join('. ')
+                    toast.error(`${fieldName}: ${errorMessages}`)
+                })
             } else {
                 toast.error(error.message || "Có lỗi xảy ra khi cập nhật tour")
             }
@@ -372,10 +415,10 @@ export default function EditTourPage() {
                                                     type="button"
                                                     variant="destructive"
                                                     size="icon"
-                                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="absolute top-1 right-1 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                                                     onClick={() => handleRemoveExistingImage(index)}
                                                 >
-                                                    <IconTrash className="h-3 w-3" />
+                                                    <IconTrash className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         ))}
@@ -414,10 +457,10 @@ export default function EditTourPage() {
                                                     type="button"
                                                     variant="destructive"
                                                     size="icon"
-                                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="absolute top-1 right-1 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                                                     onClick={() => handleRemoveFileImage(index)}
                                                 >
-                                                    <IconTrash className="h-3 w-3" />
+                                                    <IconTrash className="h-4 w-4" />
                                                 </Button>
                                                 <span className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
                                                     Mới

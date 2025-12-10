@@ -41,9 +41,10 @@ export default function TourDetailPage() {
         if (!tour) return
 
         try {
-            const updatedTour = await tourService.toggleAvailability(tourId)
-            setTour(updatedTour)
-            toast.success(updatedTour.availability ? 'Đã mở tour' : 'Đã đóng tour')
+            await tourService.toggleAvailability(tourId)
+            // Fetch lại tour đầy đủ để có images và itineraries
+            await fetchTourDetail()
+            toast.success(!tour.availability ? 'Đã mở tour' : 'Đã đóng tour')
         } catch (error) {
             console.error('Error toggling availability:', error)
             toast.error('Không thể thay đổi trạng thái tour')

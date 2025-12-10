@@ -32,7 +32,7 @@ export default function FacebookCallbackPage() {
                 }
 
                 // Send code to backend
-                const response = await fetch(`${process.env.SERVER_API || 'http://localhost:8000/api'}/auth/facebook/callback`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api'}/auth/facebook/callback`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -8,7 +8,7 @@ import {
     PaymentPaginationParams
 } from "@/types/payment";
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api';
 
 interface MoMoPaymentResponse {
     checkoutID: number;

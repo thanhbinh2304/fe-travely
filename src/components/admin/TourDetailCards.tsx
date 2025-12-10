@@ -46,37 +46,15 @@ interface TourDetailCardsProps {
 }
 
 export function TourDetailCards({ tour }: TourDetailCardsProps) {
-    // Mock data cho ảnh tour
-    const tourImages = tour.images || [
-        { imageID: '1', tourID: tour.tourID, imageUrl: '/images/tours/sample-1.jpg' },
-        { imageID: '2', tourID: tour.tourID, imageUrl: '/images/tours/sample-2.jpg' },
-        { imageID: '3', tourID: tour.tourID, imageUrl: '/images/tours/sample-3.jpg' },
-    ]
+    // Lấy ảnh tour từ API
+    const tourImages = tour.images || []
 
-    // Mock data cho lịch trình
-    const itineraries = tour.itineraries || [
-        {
-            itineraryID: '1',
-            tourID: tour.tourID,
-            dayNumber: 1,
-            destination: 'Hà Nội',
-            activity: 'Tham quan Văn Miếu Quốc Tử Giám, Hồ Hoàn Kiếm, Phố cổ Hà Nội. Thưởng thức món ăn đặc sản.'
-        },
-        {
-            itineraryID: '2',
-            tourID: tour.tourID,
-            dayNumber: 2,
-            destination: 'Vịnh Hạ Long',
-            activity: 'Di chuyển đến Hạ Long, tour du thuyền ngắm vịnh, thăm hang động, tắm biển. Nghỉ đêm trên tàu.'
-        },
-        {
-            itineraryID: '3',
-            tourID: tour.tourID,
-            dayNumber: 3,
-            destination: 'Hà Nội - Trở về',
-            activity: 'Tiếp tục tham quan Hạ Long buổi sáng, về Hà Nội. Mua sắm quà lưu niệm và trở về.'
-        },
-    ]
+    // Debug logging
+    console.log('Tour data:', tour);
+    console.log('Tour images:', tourImages);
+
+    // Lấy lịch trình từ API
+    const itineraries = tour.itineraries || []
 
     return (
         <>
@@ -87,21 +65,37 @@ export function TourDetailCards({ tour }: TourDetailCardsProps) {
                     <CardDescription>Ảnh minh họa và điểm đến của tour</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {tourImages.map((image, index) => (
-                            <div key={image.imageID} className="relative aspect-video rounded-lg overflow-hidden border bg-muted">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <IconMapPin className="w-12 h-12 text-muted-foreground opacity-30" />
-                                </div>
-                                {index === 0 && (
-                                    <Badge className="absolute top-2 left-2 bg-blue-600">Ảnh chính</Badge>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-3">
-                        💡 Click để xem ảnh lớn hơn (chức năng đang phát triển)
-                    </p>
+                    {tourImages.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {tourImages.map((image, index) => {
+                                console.log('Image URL:', image.imageUrl);
+                                return (
+                                    <div key={image.imageID} className="relative aspect-video rounded-lg overflow-hidden border bg-muted">
+                                        <Image
+                                            src={image.imageUrl}
+                                            alt={`Tour image ${index + 1}`}
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                                            unoptimized
+                                            onError={(e) => {
+                                                console.error('Image failed to load:', image.imageUrl);
+                                                console.error('Error event:', e);
+                                            }}
+                                        />
+                                        {index === 0 && (
+                                            <Badge className="absolute top-2 left-2 bg-blue-600">Ảnh chính</Badge>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                            <IconMapPin className="w-16 h-16 mb-4 opacity-30" />
+                            <p>Chưa có hình ảnh cho tour này</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

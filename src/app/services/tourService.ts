@@ -1,6 +1,6 @@
 import { ApiResponse, CreateTourData, PaginationParams, SearchParams, Tour, UpdateTourData } from "@/types/tour";
 import { Review } from "@/types/review";
-const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api';
 
 interface TourFilters {
     destination?: string;
@@ -125,13 +125,75 @@ class TourService {
         }
     }
 
-    // Save a new tour
-    async store(tourData: CreateTourData): Promise<ApiResponse<Tour>> {
+    // Upload tour image
+    async uploadImage(file: File): Promise<{ url: string }> {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const token = this.getToken();
+        const response = await fetch(`${API_URL}/tours/upload-image`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw data;
+        }
+        return data.data;
+    }
+
+    // Save a new tour with file uploads
+    async store(tourData: CreateTourData, imageFiles?: File[]): Promise<ApiResponse<Tour>> {
+        const formData = new FormData();
+
+        // Add tour data
+        Object.keys(tourData).forEach((key) => {
+            const value = tourData[key as keyof CreateTourData];
+            if (value !== undefined && value !== null) {
+                if (Array.isArray(value)) {
+                    value.forEach((item, index) => {
+                        if (typeof item === 'object') {
+                            Object.keys(item).forEach((subKey) => {
+                                const val = (item as Record<string, unknown>)[subKey];
+                                formData.append(`${key}[${index}][${subKey}]`, String(val));
+                            });
+                        } else {
+                            formData.append(`${key}[]`, String(item));
+                        }
+                    });
+                } else {
+                    // Convert boolean to 0/1 for Laravel
+                    if (key === 'availability' && typeof value === 'boolean') {
+                        formData.append(key, value ? '1' : '0');
+                    } else {
+                        formData.append(key, String(value));
+                    }
+                }
+            }
+        });
+
+        // Add image files
+        if (imageFiles && imageFiles.length > 0) {
+            imageFiles.forEach((file) => {
+                formData.append('image_files[]', file);
+            });
+        }
+
+        const token = this.getToken();
         const response = await fetch(`${API_URL}/tours`, {
             method: 'POST',
-            headers: this.getHeaders(true),
-            body: JSON.stringify(tourData),
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+            body: formData,
         });
+
         const data = await response.json();
         if (!response.ok) {
             throw data;
@@ -184,7 +246,63 @@ class TourService {
         }
     }
 
-    async update(tourID: string, tourData: UpdateTourData): Promise<ApiResponse<Tour>> {
+    async update(tourID: string, tourData: UpdateTourData, imageFiles?: File[]): Promise<ApiResponse<Tour>> {
+        // If there are files, use FormData
+        if (imageFiles && imageFiles.length > 0) {
+            const formData = new FormData();
+
+            // Add tour data
+            Object.keys(tourData).forEach((key) => {
+                const value = tourData[key as keyof UpdateTourData];
+                if (value !== undefined && value !== null) {
+                    if (Array.isArray(value)) {
+                        value.forEach((item, index) => {
+                            if (typeof item === 'object') {
+                                Object.keys(item).forEach((subKey) => {
+                                    const val = (item as Record<string, unknown>)[subKey];
+                                    formData.append(`${key}[${index}][${subKey}]`, String(val));
+                                });
+                            } else {
+                                formData.append(`${key}[]`, String(item));
+                            }
+                        });
+                    } else {
+                        // Convert boolean to 0/1 for Laravel
+                        if (key === 'availability' && typeof value === 'boolean') {
+                            formData.append(key, value ? '1' : '0');
+                        } else {
+                            formData.append(key, String(value));
+                        }
+                    }
+                }
+            });
+
+            // Add image files
+            imageFiles.forEach((file) => {
+                formData.append('image_files[]', file);
+            });
+
+            // Add _method to override POST as PUT for Laravel
+            formData.append('_method', 'PUT');
+
+            const token = this.getToken();
+            const response = await fetch(`${API_URL}/tours/${tourID}`, {
+                method: 'POST', // Use POST for multipart/form-data
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw data;
+            }
+            return data;
+        }
+
+        // Otherwise use JSON
         const response = await fetch(`${API_URL}/tours/${tourID}`, {
             method: 'PUT',
             headers: this.getHeaders(true),

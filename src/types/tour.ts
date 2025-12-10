@@ -1,5 +1,5 @@
 import { Review } from "./review";
-export interface Tour{
+export interface Tour {
     tourID: string;
     title: string;
     description: string;
@@ -22,13 +22,13 @@ export interface Tour{
     mainImage?: string;
 }
 
-export interface TourImage{
+export interface TourImage {
     imageID: string;
     tourID: string;
     imageUrl: string;
     createdAt?: string;
 }
-export interface Itinerary{
+export interface Itinerary {
     itineraryID: string;
     tourID: string;
     dayNumber: number;
@@ -36,7 +36,7 @@ export interface Itinerary{
     activity: string;
     createdAt?: string;
 }
-export interface CreateTourData{
+export interface CreateTourData {
     title: string;
     description: string;
     quantity: number;
@@ -46,10 +46,23 @@ export interface CreateTourData{
     availability: boolean;
     startDate: string;
     endDate: string;
+    images?: string[];
+    itineraries?: {
+        dayNumber: number;
+        destination: string;
+        activity: string;
+    }[];
 }
-export interface UpdateTourData extends Partial<CreateTourData>{}
+export interface UpdateTourData extends Partial<CreateTourData> {
+    images?: string[];
+    itineraries?: {
+        dayNumber: number;
+        destination: string;
+        activity: string;
+    }[];
+}
 
-export interface SearchParams{
+export interface SearchParams {
     keyword?: string;
     destination?: string;
     minPrice?: number;
@@ -58,12 +71,12 @@ export interface SearchParams{
     availability?: boolean;
     endDate?: string;
 }
-export interface PaginationParams{
+export interface PaginationParams {
     page?: number;
     limit?: number;
 }
 
-export interface ApiResponse<T>{
+export interface ApiResponse<T> {
     success: boolean;
     message: string;
     data: T;

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { IconArrowLeft, IconPlus, IconTrash, IconX, IconUpload, IconPhoto } from "@tabler/icons-react"
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
+import { IconArrowLeft, IconPlus, IconTrash } from "@tabler/icons-react"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,21 +10,17 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { tourService } from "@/app/services/tourService"
+import { Tour } from "@/types/tour"
 
-// Helper to convert HTTP image URLs to HTTPS proxy
-const getProxiedImageUrl = (url: string) => {
-    if (url.startsWith('http://')) {
-        return `/api/image-proxy?url=${encodeURIComponent(url)}`
-    }
-    return url
-}
-
-export default function CreateTourPage() {
+export default function EditTourPage() {
     const router = useRouter()
+    const params = useParams()
+    const tourId = params.id as string
+
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
     // Form states
     const [title, setTitle] = useState("")
@@ -38,8 +34,7 @@ export default function CreateTourPage() {
     const [availability, setAvailability] = useState(true)
 
     // Images state
-    const [images, setImages] = useState<string[]>([])
-    const [imageInput, setImageInput] = useState("")
+    const [existingImages, setExistingImages] = useState<string[]>([])
     const [imageFiles, setImageFiles] = useState<File[]>([])
     const [imagePreviews, setImagePreviews] = useState<string[]>([])
 
@@ -48,15 +43,74 @@ export default function CreateTourPage() {
         { dayNumber: 1, destination: "", activity: "" }
     ])
 
-    const handleAddImage = () => {
-        if (imageInput.trim()) {
-            setImages([...images, imageInput.trim()])
-            setImageInput("")
+    // Fetch tour data on mount
+    useEffect(() => {
+        fetchTourData()
+    }, [tourId])
+
+    const fetchTourData = async () => {
+        try {
+            setIsLoading(true)
+            const tour = await tourService.getTourById(tourId)
+
+            // Populate form with existing data
+            setTitle(tour.title)
+            setDescription(tour.description)
+            setDestination(tour.destination)
+            setPriceAdult(tour.priceAdult.toString())
+            setPriceChild(tour.priceChild.toString())
+            setQuantity(tour.quantity.toString())
+
+            // Format dates for input type="date" (YYYY-MM-DD)
+            setStartDate(tour.startDate.split('T')[0])
+            setEndDate(tour.endDate.split('T')[0])
+            setAvailability(tour.availability)
+
+
+            // Populate existing images
+            if (tour.images && tour.images.length > 0) {
+                setExistingImages(tour.images.map(img => (img as any).imageURL || img.imageUrl))
+            }
+
+            // Populate itineraries if they exist
+            if (tour.itineraries && tour.itineraries.length > 0) {
+                setItineraries(tour.itineraries.map(item => ({
+                    dayNumber: item.dayNumber,
+                    destination: item.destination,
+                    activity: item.activity
+                })))
+            }
+        } catch (error) {
+            console.error('Error fetching tour:', error)
+            toast.error('Không thể tải thông tin tour')
+            router.push('/dashboard/tours')
+        } finally {
+            setIsLoading(false)
         }
     }
 
-    const handleRemoveImage = (index: number) => {
-        setImages(images.filter((_, i) => i !== index))
+    const handleAddItinerary = () => {
+        setItineraries([
+            ...itineraries,
+            { dayNumber: itineraries.length + 1, destination: "", activity: "" }
+        ])
+    }
+
+    const handleRemoveItinerary = (index: number) => {
+        if (itineraries.length > 1) {
+            const newItineraries = itineraries.filter((_, i) => i !== index)
+            // Re-number the days
+            setItineraries(newItineraries.map((item, idx) => ({
+                ...item,
+                dayNumber: idx + 1
+            })))
+        }
+    }
+
+    const handleItineraryChange = (index: number, field: string, value: string) => {
+        const newItineraries = [...itineraries]
+        newItineraries[index] = { ...newItineraries[index], [field]: value }
+        setItineraries(newItineraries)
     }
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,25 +135,8 @@ export default function CreateTourPage() {
         setImagePreviews(imagePreviews.filter((_, i) => i !== index))
     }
 
-
-
-    const handleAddItinerary = () => {
-        setItineraries([
-            ...itineraries,
-            { dayNumber: itineraries.length + 1, destination: "", activity: "" }
-        ])
-    }
-
-    const handleRemoveItinerary = (index: number) => {
-        if (itineraries.length > 1) {
-            setItineraries(itineraries.filter((_, i) => i !== index))
-        }
-    }
-
-    const handleItineraryChange = (index: number, field: string, value: string) => {
-        const newItineraries = [...itineraries]
-        newItineraries[index] = { ...newItineraries[index], [field]: value }
-        setItineraries(newItineraries)
+    const handleRemoveExistingImage = (index: number) => {
+        setExistingImages(existingImages.filter((_, i) => i !== index))
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -114,11 +151,8 @@ export default function CreateTourPage() {
         }
 
         try {
-            // Filter out empty or invalid images
-            const validImages = images.filter(img => img && img.trim() !== '')
-
             // Prepare tour data
-            const tourData = {
+            const tourData: any = {
                 title,
                 description,
                 destination,
@@ -128,54 +162,68 @@ export default function CreateTourPage() {
                 startDate,
                 endDate,
                 availability,
-                images: validImages.length > 0 ? validImages : undefined,
                 itineraries: itineraries.filter(item => item.destination && item.activity)
             }
 
-            console.log('Submitting tour data:', tourData)
+            // Only include images if there are changes
+            if (imageFiles.length > 0 || existingImages.length > 0) {
+                tourData.images = existingImages;
+            }
 
-            // Call API to create tour with image files
-            const response = await tourService.store(tourData, imageFiles)
-
-            console.log('Response:', response)
+            // Call API to update tour with new image files
+            const response = await tourService.update(tourId, tourData, imageFiles.length > 0 ? imageFiles : undefined)
 
             if (response.success) {
-                toast.success("Tour đã được tạo thành công!")
-                router.push("/dashboard/tours")
+                toast.success("Tour đã được cập nhật thành công!")
+                router.push(`/dashboard/tours/${tourId}`)
             } else {
-                toast.error(response.message || "Có lỗi xảy ra khi tạo tour")
+                toast.error(response.message || "Có lỗi xảy ra khi cập nhật tour")
             }
         } catch (error: any) {
-            console.error("Error creating tour:", error)
+            console.error("Error updating tour:", error)
+            console.error("Validation errors:", error.errors)
             if (error.errors) {
                 // Handle validation errors from backend
                 const errorMessages = Object.values(error.errors).flat().join(", ")
                 toast.error(errorMessages as string)
             } else {
-                toast.error(error.message || "Có lỗi xảy ra khi tạo tour")
+                toast.error(error.message || "Có lỗi xảy ra khi cập nhật tour")
             }
         } finally {
             setIsSubmitting(false)
         }
     }
 
+    if (isLoading) {
+        return (
+            <>
+                <SiteHeader title="Chỉnh sửa tour" />
+                <div className="flex flex-1 flex-col items-center justify-center p-4">
+                    <div className="text-center">
+                        <p className="text-muted-foreground">Đang tải...</p>
+                    </div>
+                </div>
+            </>
+        )
+    }
+
     return (
         <>
-            <SiteHeader title="Tạo tour mới" />
+            <SiteHeader title="Chỉnh sửa tour" />
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push('/dashboard/tours')}
+                        onClick={() => router.push(`/dashboard/tours/${tourId}`)}
                     >
                         <IconArrowLeft className="mr-2 h-4 w-4" />
                         Quay lại
                     </Button>
                     <div className="flex-1">
-                        <h1 className="text-2xl font-bold">Tạo tour mới</h1>
-                        <p className="text-muted-foreground">Điền thông tin chi tiết cho tour du lịch</p>
+                        <h1 className="text-2xl font-bold">Chỉnh sửa tour</h1>
+                        <p className="text-muted-foreground">Cập nhật thông tin chi tiết cho tour du lịch</p>
                     </div>
                 </div>
 
@@ -301,104 +349,65 @@ export default function CreateTourPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Hình ảnh tour */}
+                    {/* Hình ảnh */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Hình ảnh tour</CardTitle>
-                            <CardDescription>Thêm ảnh minh họa cho tour (URL hoặc upload file)</CardDescription>
+                            <CardTitle>Hình ảnh</CardTitle>
+                            <CardDescription>Quản lý ảnh tour</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {/* Danh sách ảnh hiện tại */}
-                            {images.length > 0 && (
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {images.map((image, index) => (
-                                        <div key={index} className="relative group">
-                                            <div className="aspect-video rounded-lg border overflow-hidden bg-muted flex items-center justify-center">
+                            {/* Existing images */}
+                            {existingImages.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label>Ảnh hiện tại ({existingImages.length})</Label>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {existingImages.map((image, index) => (
+                                            <div key={index} className="relative group aspect-video rounded-lg overflow-hidden border">
                                                 <img
-                                                    src={getProxiedImageUrl(image)}
-                                                    alt={`Tour image ${index + 1}`}
+                                                    src={image}
+                                                    alt={`Tour ${index + 1}`}
                                                     className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                        const target = e.target as HTMLImageElement;
-                                                        target.style.display = 'none';
-                                                    }}
                                                 />
-                                                <IconPhoto className="absolute h-12 w-12 text-muted-foreground opacity-30" />
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="icon"
+                                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={() => handleRemoveExistingImage(index)}
+                                                >
+                                                    <IconTrash className="h-3 w-3" />
+                                                </Button>
                                             </div>
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="icon"
-                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={() => handleRemoveImage(index)}
-                                            >
-                                                <IconX className="h-3 w-3" />
-                                            </Button>
-                                            {index === 0 && (
-                                                <span className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                                                    Ảnh chính
-                                                </span>
-                                            )}
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 
-                            {/* Thêm ảnh bằng URL */}
+                            {/* Upload new files */}
                             <div className="space-y-2">
-                                <Label>Thêm ảnh bằng URL</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        placeholder="https://example.com/image.jpg"
-                                        value={imageInput}
-                                        onChange={(e) => setImageInput(e.target.value)}
-                                        onKeyPress={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                handleAddImage()
-                                            }
-                                        }}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={handleAddImage}
-                                        disabled={!imageInput.trim()}
-                                    >
-                                        <IconPlus className="h-4 w-4 mr-2" />
-                                        Thêm
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* Upload file */}
-                            <div className="space-y-2">
-                                <Label>Hoặc upload file ảnh</Label>
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        onChange={handleFileUpload}
-                                        className="cursor-pointer"
-                                    />
-                                    <IconUpload className="h-5 w-5 text-muted-foreground" />
-                                </div>
+                                <Label>Upload ảnh mới</Label>
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleFileUpload}
+                                    className="cursor-pointer"
+                                />
                                 <p className="text-xs text-muted-foreground">
-                                    Chấp nhận: JPG, PNG, GIF, WEBP (tối đa 5MB/ảnh). Ảnh đầu tiên sẽ là ảnh chính.
+                                    Chấp nhận: JPG, PNG, GIF, WEBP (tối đa 5MB/ảnh)
                                 </p>
                             </div>
 
-                            {/* Preview uploaded files */}
+                            {/* Preview new uploads */}
                             {imagePreviews.length > 0 && (
                                 <div className="space-y-2">
-                                    <Label>Ảnh đã upload ({imagePreviews.length})</Label>
+                                    <Label>Ảnh mới ({imagePreviews.length})</Label>
                                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                         {imagePreviews.map((preview, index) => (
-                                            <div key={index} className="relative group aspect-video rounded-lg overflow-hidden border">
+                                            <div key={index} className="relative group aspect-video rounded-lg overflow-hidden border border-green-500">
                                                 <img
                                                     src={preview}
-                                                    alt={`Upload ${index + 1}`}
+                                                    alt={`New ${index + 1}`}
                                                     className="w-full h-full object-cover"
                                                 />
                                                 <Button
@@ -408,13 +417,11 @@ export default function CreateTourPage() {
                                                     className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                                     onClick={() => handleRemoveFileImage(index)}
                                                 >
-                                                    <IconX className="h-3 w-3" />
+                                                    <IconTrash className="h-3 w-3" />
                                                 </Button>
-                                                {index === 0 && (
-                                                    <span className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
-                                                        Ảnh chính
-                                                    </span>
-                                                )}
+                                                <span className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                                                    Mới
+                                                </span>
                                             </div>
                                         ))}
                                     </div>
@@ -505,12 +512,12 @@ export default function CreateTourPage() {
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={() => router.push('/dashboard/tours')}
+                            onClick={() => router.push(`/dashboard/tours/${tourId}`)}
                         >
                             Hủy
                         </Button>
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Đang tạo..." : "Tạo tour"}
+                            {isSubmitting ? "Đang cập nhật..." : "Cập nhật tour"}
                         </Button>
                     </div>
                 </form>

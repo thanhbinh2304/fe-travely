@@ -188,7 +188,7 @@ function TourActionsCell({ tour }: { tour: Tour }) {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => {
-                        toast.success(`Editing tour: ${tour.title}`)
+                        router.push(`/dashboard/tours/${tour.tourID}/edit`)
                     }}
                 >
                     <IconEdit className="mr-2 h-4 w-4" />

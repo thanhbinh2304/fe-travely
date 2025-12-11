@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, Star, Clock } from 'lucide-react';
@@ -16,6 +16,7 @@ interface TourCardProps {
 export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const mainImage = tourService.getMainImage(tour);
     const averageRating = tour.reviews
@@ -27,29 +28,38 @@ export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
     useEffect(() => {
         const checkWishlist = async () => {
             const inWishlist = await wishlistService.isInWishlist(tour.tourID);
-            console.log(`Tour ${tour.tourID} wishlist status:`, inWishlist);
             setIsWishlisted(inWishlist);
         };
 
-        // Initial check
+        // Debounced check function
+        const debouncedCheck = () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+            debounceTimerRef.current = setTimeout(() => {
+                checkWishlist();
+            }, 300); // 300ms debounce
+        };
+
+        // Initial check (no debounce)
         checkWishlist();
 
         // Listen for storage changes (for cross-tab sync)
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === 'wishlist') {
-                checkWishlist();
+                debouncedCheck();
             }
         };
 
         // Listen for custom wishlist update events
         const handleWishlistUpdate = () => {
-            checkWishlist();
+            debouncedCheck();
         };
 
         // Listen for page visibility changes
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
-                checkWishlist();
+                debouncedCheck();
             }
         };
 
@@ -58,6 +68,9 @@ export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('wishlist-updated', handleWishlistUpdate);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -69,11 +82,9 @@ export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
         e.stopPropagation();
         if (isLoading) return;
 
-        console.log(`Toggling wishlist for tour ${tour.tourID}, current state:`, isWishlisted);
         setIsLoading(true);
         try {
             const newState = await wishlistService.toggleWishlist(tour.tourID);
-            console.log(`New wishlist state for tour ${tour.tourID}:`, newState);
             setIsWishlisted(newState);
             onAddtoWishlist?.(tour.tourID);
         } catch (error) {

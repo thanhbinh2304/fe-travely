@@ -7,6 +7,11 @@ interface WishlistResponse {
 }
 
 class WishlistService {
+    private wishlistCache: string[] | null = null;
+    private cacheTimestamp: number = 0;
+    private CACHE_DURATION = 30000; // 30 seconds cache
+    private inFlightRequest: Promise<string[]> | null = null;
+
     private getHeaders(includeAuth = false) {
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
@@ -43,70 +48,123 @@ class WishlistService {
 
     // Get wishlist (for authenticated users from API, for guests from localStorage)
     async getWishlist(): Promise<string[]> {
-        if (this.isAuthenticated()) {
-            try {
-                const response = await fetch(`${API_URL}/wishlist`, {
-                    method: 'GET',
-                    headers: this.getHeaders(true),
-                });
-                const data = await response.json();
-                if (data.success && data.data?.items) {
-                    return data.data.items.map((item: any) => item.tourID.toString());
-                }
-                return [];
-            } catch (error) {
-                console.error('Error fetching wishlist:', error);
-                return [];
-            }
-        } else {
-            // Guest: get from localStorage
-            const savedWishlist = localStorage.getItem('wishlist');
-            return savedWishlist ? JSON.parse(savedWishlist) : [];
+        // Check cache first
+        const now = Date.now();
+        if (this.wishlistCache && (now - this.cacheTimestamp) < this.CACHE_DURATION) {
+            return this.wishlistCache;
         }
+
+        // If request is already in flight, wait for it
+        if (this.inFlightRequest) {
+            return this.inFlightRequest;
+        }
+
+        if (this.isAuthenticated()) {
+            this.inFlightRequest = this.fetchWishlistFromAPI();
+            const result = await this.inFlightRequest;
+            this.inFlightRequest = null;
+            return result;
+        } else {
+            return this.getFromLocalStorage();
+        }
+    }
+
+    private async fetchWishlistFromAPI(): Promise<string[]> {
+        try {
+            const response = await fetch(`${API_URL}/wishlist`, {
+                method: 'GET',
+                headers: this.getHeaders(true),
+            });
+
+            if (!response.ok) {
+                // If unauthorized, token expired - fall back to localStorage
+                if (response.status === 401) {
+                    console.warn('[WishlistService] Token expired in getWishlist, using localStorage');
+                    return this.getFromLocalStorage();
+                }
+                throw new Error(`Failed to fetch wishlist: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.success && data.data?.items) {
+                const wishlist = data.data.items.map((item: any) => item.tourID.toString());
+                this.wishlistCache = wishlist;
+                this.cacheTimestamp = Date.now();
+                return wishlist;
+            }
+            return [];
+        } catch (error) {
+            console.error('[WishlistService] Error fetching wishlist:', error);
+            // Fall back to localStorage on any error
+            return this.getFromLocalStorage();
+        }
+    }
+
+    // Helper to get wishlist from localStorage
+    private getFromLocalStorage(): string[] {
+        const savedWishlist = localStorage.getItem('wishlist');
+        const wishlist = savedWishlist ? JSON.parse(savedWishlist) : [];
+        this.wishlistCache = wishlist;
+        this.cacheTimestamp = Date.now();
+        return wishlist;
     }
 
     // Toggle tour in wishlist
     async toggleWishlist(tourID: string): Promise<boolean> {
-        console.log('[WishlistService] Toggling tour:', tourID, 'isAuthenticated:', this.isAuthenticated());
         if (this.isAuthenticated()) {
             try {
                 const response = await fetch(`${API_URL}/wishlist/toggle/${tourID}`, {
                     method: 'POST',
                     headers: this.getHeaders(true),
                 });
+
+                if (!response.ok) {
+                    // If unauthorized, token expired - fall back to localStorage
+                    if (response.status === 401) {
+                        console.warn('[WishlistService] Token expired, falling back to localStorage');
+                        return this.toggleLocalStorage(tourID);
+                    }
+                    throw new Error(`Failed to toggle wishlist: ${response.status}`);
+                }
+
                 const data = await response.json();
                 const inWishlist = data.success && data.data?.in_wishlist;
-                console.log('[WishlistService] API response:', data, 'inWishlist:', inWishlist);
-                // Dispatch event to notify components
+                // Clear cache and dispatch event
+                this.wishlistCache = null;
                 window.dispatchEvent(new Event('wishlist-updated'));
                 return inWishlist;
             } catch (error) {
-                console.error('Error toggling wishlist:', error);
-                throw error;
+                console.error('[WishlistService] Error toggling wishlist:', error);
+                // Fall back to localStorage on any error
+                return this.toggleLocalStorage(tourID);
             }
         } else {
-            // Guest: update localStorage
-            const savedWishlist = localStorage.getItem('wishlist');
-            let tourIDs: string[] = savedWishlist ? JSON.parse(savedWishlist) : [];
-            console.log('[WishlistService] Current wishlist:', tourIDs);
-
-            // Ensure tourID is string for consistent comparison
-            const tourIDStr = tourID.toString();
-            const index = tourIDs.indexOf(tourIDStr);
-            let inWishlist: boolean;
-            if (index > -1) {
-                tourIDs.splice(index, 1);
-                inWishlist = false;
-            } else {
-                tourIDs.push(tourIDStr);
-                inWishlist = true;
-            }
-            localStorage.setItem('wishlist', JSON.stringify(tourIDs));
-            console.log('[WishlistService] Updated wishlist:', tourIDs, 'inWishlist:', inWishlist);
-            // Dispatch event to notify components
-            window.dispatchEvent(new Event('wishlist-updated'));
-            return inWishlist;
+            return this.toggleLocalStorage(tourID);
         }
+    }
+
+    // Helper method to toggle in localStorage
+    private toggleLocalStorage(tourID: string): boolean {
+        const savedWishlist = localStorage.getItem('wishlist');
+        let tourIDs: string[] = savedWishlist ? JSON.parse(savedWishlist) : [];
+
+        // Ensure tourID is string for consistent comparison
+        const tourIDStr = tourID.toString();
+        const index = tourIDs.indexOf(tourIDStr);
+        let inWishlist: boolean;
+        if (index > -1) {
+            tourIDs.splice(index, 1);
+            inWishlist = false;
+        } else {
+            tourIDs.push(tourIDStr);
+            inWishlist = true;
+        }
+        localStorage.setItem('wishlist', JSON.stringify(tourIDs));
+        // Clear cache and dispatch event
+        this.wishlistCache = tourIDs;
+        this.cacheTimestamp = Date.now();
+        window.dispatchEvent(new Event('wishlist-updated'));
+        return inWishlist;
     }
 
     // Check if tour is in wishlist
@@ -119,26 +177,45 @@ class WishlistService {
     async removeFromWishlist(tourID: string): Promise<void> {
         if (this.isAuthenticated()) {
             try {
-                await fetch(`${API_URL}/wishlist/${tourID}`, {
+                const response = await fetch(`${API_URL}/wishlist/${tourID}`, {
                     method: 'DELETE',
                     headers: this.getHeaders(true),
                 });
-                // Dispatch event to notify components
+
+                if (!response.ok) {
+                    // If unauthorized, token expired - fall back to localStorage
+                    if (response.status === 401) {
+                        console.warn('[WishlistService] Token expired, falling back to localStorage');
+                        this.removeFromLocalStorage(tourID);
+                        return;
+                    }
+                    throw new Error(`Failed to remove from wishlist: ${response.status}`);
+                }
+
+                // Clear cache and dispatch event
+                this.wishlistCache = null;
                 window.dispatchEvent(new Event('wishlist-updated'));
             } catch (error) {
-                console.error('Error removing from wishlist:', error);
-                throw error;
+                console.error('[WishlistService] Error removing from wishlist:', error);
+                // Fall back to localStorage on any error
+                this.removeFromLocalStorage(tourID);
             }
         } else {
-            // Guest: update localStorage
-            const savedWishlist = localStorage.getItem('wishlist');
-            if (savedWishlist) {
-                let tourIDs: string[] = JSON.parse(savedWishlist);
-                tourIDs = tourIDs.filter(id => id.toString() !== tourID.toString());
-                localStorage.setItem('wishlist', JSON.stringify(tourIDs));
-                // Dispatch event to notify components
-                window.dispatchEvent(new Event('wishlist-updated'));
-            }
+            this.removeFromLocalStorage(tourID);
+        }
+    }
+
+    // Helper method to remove from localStorage
+    private removeFromLocalStorage(tourID: string): void {
+        const savedWishlist = localStorage.getItem('wishlist');
+        if (savedWishlist) {
+            let tourIDs: string[] = JSON.parse(savedWishlist);
+            tourIDs = tourIDs.filter(id => id.toString() !== tourID.toString());
+            localStorage.setItem('wishlist', JSON.stringify(tourIDs));
+            // Update cache and dispatch event
+            this.wishlistCache = tourIDs;
+            this.cacheTimestamp = Date.now();
+            window.dispatchEvent(new Event('wishlist-updated'));
         }
     }
 

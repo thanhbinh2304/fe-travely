@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, Star, Clock } from 'lucide-react';
@@ -22,8 +22,31 @@ export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
     const totalReviews = tour.reviews?.length || 0;
     const duration = tourService.getTourDuration(tour.startDate, tour.endDate);
 
+    useEffect(() => {
+        // Check if tour is in wishlist
+        const savedWishlist = localStorage.getItem('wishlist');
+        if (savedWishlist) {
+            const tourIDs = JSON.parse(savedWishlist) as string[];
+            setIsWishlisted(tourIDs.includes(tour.tourID));
+        }
+    }, [tour.tourID]);
+
     const handleWishlistClick = (e: React.MouseEvent) => {
         e.preventDefault();
+
+        // Get current wishlist
+        const savedWishlist = localStorage.getItem('wishlist');
+        let tourIDs: string[] = savedWishlist ? JSON.parse(savedWishlist) : [];
+
+        if (isWishlisted) {
+            // Remove from wishlist
+            tourIDs = tourIDs.filter(id => id !== tour.tourID);
+        } else {
+            // Add to wishlist
+            tourIDs.push(tour.tourID);
+        }
+
+        localStorage.setItem('wishlist', JSON.stringify(tourIDs));
         setIsWishlisted(!isWishlisted);
         onAddtoWishlist?.(tour.tourID);
     };

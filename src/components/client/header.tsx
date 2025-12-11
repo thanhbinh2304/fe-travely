@@ -163,13 +163,13 @@ export default function HeaderClient() {
                             {/* Wishlist */}
                             <Link href="/wishlist" className="flex flex-col items-center group">
                                 <Heart className="w-5 h-5 text-gray-700 group-hover:text-red-500 transition" />
-                                <span className="text-xs text-gray-600 mt-1">Wishlist</span>
+                                <span className="text-xs text-gray-600 mt-1">Yêu thích</span>
                             </Link>
 
                             {/* Cart */}
                             <Link href="/cart" className="flex flex-col items-center group relative">
                                 <ShoppingCart className="w-5 h-5 text-gray-700 group-hover:text-blue-600 transition" />
-                                <span className="text-xs text-gray-600 mt-1">Cart</span>
+                                <span className="text-xs text-gray-600 mt-1">Giỏ hàng</span>
                                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                                     0
                                 </span>

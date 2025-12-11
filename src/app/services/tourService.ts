@@ -525,7 +525,21 @@ class TourService {
     }
     //get main image
     getMainImage(tour: Tour): string {
-        return tour.images?.[0]?.imageUrl || '/images/placeholder-tour.jpg';
+        console.log('getMainImage called for tour:', tour.tourID);
+        console.log('tour.images:', tour.images);
+
+        // Check if tour has images array
+        if (tour.images && Array.isArray(tour.images) && tour.images.length > 0) {
+            const firstImage = tour.images[0];
+            console.log('First image:', firstImage);
+            // Try imageUrl first (from accessor), fallback to imageURL
+            const imageUrl = firstImage.imageUrl || firstImage.imageURL || 'https://placehold.co/800x600/e5e7eb/6b7280?text=No+Image';
+            console.log('Resolved imageUrl:', imageUrl);
+            return imageUrl;
+        }
+        console.log('No images found, using placeholder');
+        // Fallback to placeholder
+        return 'https://placehold.co/800x600/e5e7eb/6b7280?text=No+Image';
     }
 }
 export const tourService = new TourService();

@@ -26,6 +26,7 @@ export interface TourImage {
     imageID: string;
     tourID: string;
     imageUrl: string;
+    imageURL?: string; // Backend raw field
     createdAt?: string;
 }
 export interface Itinerary {

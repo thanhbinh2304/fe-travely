@@ -2,9 +2,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Star, Calendar, Users, MapPin } from 'lucide-react';
+import { Heart, Star, Clock } from 'lucide-react';
 import { Tour } from '@/types/tour';
-import {Review} from '@/types/review';
 import { reviewService } from '@/app/services/reviewService';
 import { tourService } from '@/app/services/tourService';
 
@@ -13,17 +12,15 @@ interface TourCardProps {
     onAddtoWishlist?: (tourID: string) => void;
 }
 
-export default function TourCard ({tour, onAddtoWishlist}: TourCardProps) {
+export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
     const [isWishlisted, setIsWishlisted] = useState(false);
 
-    // use helpers from tourService
     const mainImage = tourService.getMainImage(tour);
-    const averageRating = tour.reviews 
+    const averageRating = tour.reviews
         ? reviewService.calculateAverageRating(tour.reviews)
         : 0;
-    const totalReviews = tour.reviews ?.length || 0;
+    const totalReviews = tour.reviews?.length || 0;
     const duration = tourService.getTourDuration(tour.startDate, tour.endDate);
-    const isAvailable = tourService.isTourAvailable(tour);
 
     const handleWishlistClick = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -32,9 +29,9 @@ export default function TourCard ({tour, onAddtoWishlist}: TourCardProps) {
     };
 
     return (
-        <Link 
+        <Link
             href={`/tours/${tour.tourID}`}
-            className="group block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+            className="group block bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300"
         >
             {/* Image Container */}
             <div className="relative aspect-[4/3] overflow-hidden">
@@ -42,116 +39,83 @@ export default function TourCard ({tour, onAddtoWishlist}: TourCardProps) {
                     src={mainImage}
                     alt={tour.title}
                     fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    unoptimized
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://placehold.co/800x600/e5e7eb/6b7280?text=No+Image';
+                    }}
                 />
-                
+
                 {/* Wishlist Button */}
                 <button
                     onClick={handleWishlistClick}
-                    className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
+                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg hover:bg-white hover:scale-110 transition-all z-10"
                 >
-                    <Heart 
-                        className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
+                    <Heart
+                        className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
                     />
                 </button>
 
-                {/* Sold Out Badge */}
-                {!isAvailable && (
-                    <div className="absolute top-4 left-4">
-                        <span className="bg-gray-800 text-white text-xs font-semibold px-3 py-1 rounded">
-                            Sold Out
-                        </span>
-                    </div>
-                )}
-
-                {/* Limited Spots Badge */}
-                {isAvailable && tour.quantity < 10 && (
-                    <div className="absolute bottom-4 left-4">
-                        <span className="bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded">
-                            Only {tour.quantity} spots left
-                        </span>
-                    </div>
-                )}
+                {/* Category Badge */}
+                <div className="absolute top-3 left-3">
+                    <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">
+                        Tour trong ngày
+                    </span>
+                </div>
             </div>
 
             {/* Content */}
-            <div className="p-4">
-                {/* Destination */}
-                <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
-                    <MapPin className="w-3 h-3" />
-                    <span className="font-semibold uppercase tracking-wide">{tour.destination}</span>
-                </div>
-
+            <div className="p-5">
                 {/* Title */}
-                <h3 className="font-bold text-gray-900 text-base mb-3 line-clamp-2 min-h-[3rem] group-hover:text-blue-600 transition-colors">
+                <h3 className="font-bold text-gray-900 text-lg mb-3 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
                     {tour.title}
                 </h3>
 
-                {/* Duration & Availability */}
-                <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                    <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{duration} {duration === 1 ? 'day' : 'days'}</span>
-                    </div>
-                    {isAvailable && (
-                        <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            <span>{tour.quantity} spots</span>
-                        </div>
-                    )}
+                {/* Duration */}
+                <div className="flex items-center gap-1.5 text-gray-600 mb-3">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm font-medium">{duration} ngày</span>
+                </div>
+
+                {/* Certified Badge */}
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100">
+                    <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-xs text-gray-600 font-medium">Được chứng nhận</span>
                 </div>
 
                 {/* Rating */}
-                {totalReviews > 0 && (
-                    <div className="flex items-center gap-2 mb-3">
+                {totalReviews > 0 ? (
+                    <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                                <Star
-                                    key={i}
-                                    className={`w-4 h-4 ${
-                                        i < Math.floor(averageRating)
-                                            ? 'fill-yellow-400 text-yellow-400'
-                                            : 'fill-gray-300 text-gray-300'
-                                    }`}
-                                />
-                            ))}
+                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-base font-bold text-gray-900">
                             {averageRating.toFixed(1)}
                         </span>
-                        <span className="text-sm text-gray-500">
-                            ({totalReviews.toLocaleString()})
+                        <span className="text-sm text-gray-600">
+                            ({Math.round(totalReviews).toLocaleString()})
                         </span>
                     </div>
-                )}
-
-                {/* Price */}
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <div className="text-xs text-gray-500 mb-1">From</div>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-xl font-bold text-gray-900">
-                                    ${tour.priceAdult.toLocaleString()}
-                                </span>
-                                <span className="text-xs text-gray-500">/ adult</span>
-                            </div>
-                            {tour.priceChild > 0 && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                    ${tour.priceChild.toLocaleString()} / child
-                                </div>
-                            )}
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                            <Star className="w-5 h-5 fill-gray-300 text-gray-300" />
+                            <Star className="w-5 h-5 fill-gray-300 text-gray-300" />
+                            <Star className="w-5 h-5 fill-gray-300 text-gray-300" />
+                            <Star className="w-5 h-5 fill-gray-300 text-gray-300" />
+                            <Star className="w-5 h-5 fill-gray-300 text-gray-300" />
                         </div>
-                    
-                        {isAvailable && (
-                            <button className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                                Book Now
-                            </button>
-                        )}
+                        <span className="text-sm text-gray-500">Chưa có đánh giá</span>
                     </div>
-                </div>
+                )}
             </div>
         </Link>
     );
-   
 }

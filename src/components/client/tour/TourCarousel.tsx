@@ -19,7 +19,7 @@ export default function TourCarousel({ title, tours, onAddToWishlist }: TourCaro
       const newScrollPosition =
         scrollRef.current.scrollLeft +
         (direction === 'left' ? -scrollAmount : scrollAmount);
-      
+
       scrollRef.current.scrollTo({
         left: newScrollPosition,
         behavior: 'smooth',
@@ -40,14 +40,14 @@ export default function TourCarousel({ title, tours, onAddToWishlist }: TourCaro
             <button
               onClick={() => scroll('left')}
               className="p-2 rounded-full bg-white shadow-md hover:bg-gray-100 transition-colors"
-              aria-label="Scroll left"
+              aria-label="Cuộn trái"
             >
               <ChevronLeft className="w-6 h-6 text-gray-700" />
             </button>
             <button
               onClick={() => scroll('right')}
               className="p-2 rounded-full bg-white shadow-md hover:bg-gray-100 transition-colors"
-              aria-label="Scroll right"
+              aria-label="Cuộn phải"
             >
               <ChevronRight className="w-6 h-6 text-gray-700" />
             </button>

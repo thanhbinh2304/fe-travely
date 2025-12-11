@@ -59,9 +59,7 @@ export default function HeaderClient() {
                         {/* Logo */}
                         <Link href="/" className="flex items-center">
                             <div className="text-red-500 font-bold text-2xl">
-                                <span className="block leading-tight">GET</span>
-                                <span className="block leading-tight">YOUR</span>
-                                <span className="block leading-tight">GUIDE</span>
+                                <span className="block leading-tight">TRAVELY</span>
                             </div>
                         </Link>
 

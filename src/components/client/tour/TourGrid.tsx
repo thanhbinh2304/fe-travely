@@ -22,7 +22,7 @@ export default function TourGrid({ title, tours, onAddToWishlist }: TourGridProp
             </h2>
           )}
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No tours available at the moment.</p>
+            <p className="text-gray-500 text-lg">Hiện tại chưa có tour nào.</p>
           </div>
         </div>
       </section>

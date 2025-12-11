@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Heart, ShoppingCart, Globe, User, ChevronDown, LogIn, Bell, Sun, HelpCircle, ChevronRight, Calendar, LogOut } from 'lucide-react';
 import { useScrollSearch } from '@/hooks/useScrollSearch';
 import SearchBar from './SearchBar';
@@ -17,6 +18,13 @@ export default function HeaderClient() {
     const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { showSearchInHeader } = useScrollSearch();
     const { user, isAuthenticated, logout, refreshUser } = useAuth();
+    const router = useRouter();
+
+    const handleSearch = (query: string) => {
+        if (query.trim()) {
+            router.push(`/tours?search=${encodeURIComponent(query.trim())}`);
+        }
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -66,7 +74,7 @@ export default function HeaderClient() {
                         {/* Search Bar in Header (appears when scrolled past banner) */}
                         {showSearchInHeader && (
                             <div className="flex-1 max-w-2xl mx-8">
-                                <SearchBar className="scale-90" />
+                                <SearchBar className="scale-90" onSearch={handleSearch} />
                             </div>
                         )}
 

@@ -1,14 +1,17 @@
 'use client';
 
 import React, { useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import SearchBar from './SearchBar';
 
 export default function Banner() {
     const searchRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
 
     const handleSearch = (query: string) => {
-        console.log('Searching for:', query);
-        // Implement search logic here
+        if (query.trim()) {
+            router.push(`/tours?search=${encodeURIComponent(query.trim())}`);
+        }
     };
 
     return (
@@ -39,7 +42,7 @@ export default function Banner() {
                     <h2 className="text-2xl text-white font-semibold mb-6">Continue planning your trip</h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-                        
+
 
                     </div>
                 </div>

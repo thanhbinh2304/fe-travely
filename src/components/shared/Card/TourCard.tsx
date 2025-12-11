@@ -6,6 +6,7 @@ import { Heart, Star, Clock } from 'lucide-react';
 import { Tour } from '@/types/tour';
 import { reviewService } from '@/app/services/reviewService';
 import { tourService } from '@/app/services/tourService';
+import { wishlistService } from '@/app/services/wishlistService';
 
 interface TourCardProps {
     tour: Tour;
@@ -14,6 +15,7 @@ interface TourCardProps {
 
 export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
     const [isWishlisted, setIsWishlisted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const mainImage = tourService.getMainImage(tour);
     const averageRating = tour.reviews
@@ -23,32 +25,64 @@ export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
     const duration = tourService.getTourDuration(tour.startDate, tour.endDate);
 
     useEffect(() => {
-        // Check if tour is in wishlist
-        const savedWishlist = localStorage.getItem('wishlist');
-        if (savedWishlist) {
-            const tourIDs = JSON.parse(savedWishlist) as string[];
-            setIsWishlisted(tourIDs.includes(tour.tourID));
-        }
+        const checkWishlist = async () => {
+            const inWishlist = await wishlistService.isInWishlist(tour.tourID);
+            console.log(`Tour ${tour.tourID} wishlist status:`, inWishlist);
+            setIsWishlisted(inWishlist);
+        };
+
+        // Initial check
+        checkWishlist();
+
+        // Listen for storage changes (for cross-tab sync)
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'wishlist') {
+                checkWishlist();
+            }
+        };
+
+        // Listen for custom wishlist update events
+        const handleWishlistUpdate = () => {
+            checkWishlist();
+        };
+
+        // Listen for page visibility changes
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                checkWishlist();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('wishlist-updated', handleWishlistUpdate);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('wishlist-updated', handleWishlistUpdate);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [tour.tourID]);
 
-    const handleWishlistClick = (e: React.MouseEvent) => {
+    const handleWishlistClick = async (e: React.MouseEvent) => {
         e.preventDefault();
+        e.stopPropagation();
+        if (isLoading) return;
 
-        // Get current wishlist
-        const savedWishlist = localStorage.getItem('wishlist');
-        let tourIDs: string[] = savedWishlist ? JSON.parse(savedWishlist) : [];
-
-        if (isWishlisted) {
-            // Remove from wishlist
-            tourIDs = tourIDs.filter(id => id !== tour.tourID);
-        } else {
-            // Add to wishlist
-            tourIDs.push(tour.tourID);
+        console.log(`Toggling wishlist for tour ${tour.tourID}, current state:`, isWishlisted);
+        setIsLoading(true);
+        try {
+            const newState = await wishlistService.toggleWishlist(tour.tourID);
+            console.log(`New wishlist state for tour ${tour.tourID}:`, newState);
+            setIsWishlisted(newState);
+            onAddtoWishlist?.(tour.tourID);
+        } catch (error) {
+            console.error('Error toggling wishlist:', error);
+            // On error, revert state
+            setIsWishlisted(isWishlisted);
+        } finally {
+            setIsLoading(false);
         }
-
-        localStorage.setItem('wishlist', JSON.stringify(tourIDs));
-        setIsWishlisted(!isWishlisted);
-        onAddtoWishlist?.(tour.tourID);
     };
 
     return (
@@ -73,10 +107,11 @@ export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
                 {/* Wishlist Button */}
                 <button
                     onClick={handleWishlistClick}
-                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg hover:bg-white hover:scale-110 transition-all z-10"
+                    disabled={isLoading}
+                    className={`absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg hover:bg-white hover:scale-110 transition-all z-10 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                     <Heart
-                        className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
+                        className={`w-5 h-5 transition-colors ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
                     />
                 </button>
 

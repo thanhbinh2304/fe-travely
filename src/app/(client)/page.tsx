@@ -16,11 +16,13 @@ export default function Homepage() {
       try {
         setLoadingFeatured(true);
         const response = await tourService.featured(8);
+        console.log('Featured tours response:', response);
         // Handle nested data structure from paginated response
         const data = response.data as any;
         const tours = data?.data
           ? (Array.isArray(data.data) ? data.data : [])
           : (Array.isArray(response.data) ? response.data : []);
+        console.log('Featured tours extracted:', tours);
         setFeaturedTours(tours);
       } catch (error) {
         console.error('Error fetching featured tours:', error);
@@ -34,11 +36,13 @@ export default function Homepage() {
       try {
         setLoadingAvailable(true);
         const response = await tourService.available({ limit: 8 });
+        console.log('Available tours response:', response);
         // Handle nested data structure from paginated response
         const data = response.data as any;
         const tours = data?.data
           ? (Array.isArray(data.data) ? data.data : [])
           : (Array.isArray(response.data) ? response.data : []);
+        console.log('Available tours extracted:', tours);
         setAvailableTours(tours);
       } catch (error) {
         console.error('Error fetching available tours:', error);

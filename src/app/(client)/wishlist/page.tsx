@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Tour } from '@/types/tour';
 import { tourService } from '@/app/services/tourService';
 import { reviewService } from '@/app/services/reviewService';
+import { wishlistService } from '@/app/services/wishlistService';
 
 export default function WishlistPage() {
     const router = useRouter();
@@ -20,39 +21,36 @@ export default function WishlistPage() {
 
     const loadWishlist = async () => {
         try {
-            const savedWishlist = localStorage.getItem('wishlist');
-            if (savedWishlist) {
-                const tourIDs = JSON.parse(savedWishlist) as string[];
+            const tourIDs = await wishlistService.getWishlist();
 
+            if (tourIDs.length > 0) {
                 // Fetch first tour details to get image
-                if (tourIDs.length > 0) {
-                    try {
-                        const response = await tourService.show(tourIDs[0]);
-                        const tour = response.data;
-                        const image = tour.images?.[0]?.imageUrl ||
-                            tour.images?.[0]?.imageURL ||
-                            'https://placehold.co/600x400/e5e7eb/6b7280?text=Guest+Wishlist';
-                        setFirstTourImage(image);
-                    } catch (error) {
-                        console.error('Error fetching first tour:', error);
-                        setFirstTourImage('https://placehold.co/600x400/e5e7eb/6b7280?text=Guest+Wishlist');
-                    }
+                try {
+                    const response = await tourService.show(tourIDs[0]);
+                    const tour = response.data;
+                    const image = tour.images?.[0]?.imageUrl ||
+                        tour.images?.[0]?.imageURL ||
+                        'https://placehold.co/600x400/e5e7eb/6b7280?text=Guest+Wishlist';
+                    setFirstTourImage(image);
+                } catch (error) {
+                    console.error('Error fetching first tour:', error);
+                    setFirstTourImage('https://placehold.co/600x400/e5e7eb/6b7280?text=Guest+Wishlist');
                 }
-
-                const tours = tourIDs.map(id => ({
-                    tourID: id,
-                    title: '',
-                    description: '',
-                    quantity: 0,
-                    priceAdult: 0,
-                    priceChild: 0,
-                    destination: '',
-                    availability: true,
-                    startDate: '',
-                    endDate: '',
-                })) as Tour[];
-                setWishlistTours(tours);
             }
+
+            const tours = tourIDs.map(id => ({
+                tourID: id,
+                title: '',
+                description: '',
+                quantity: 0,
+                priceAdult: 0,
+                priceChild: 0,
+                destination: '',
+                availability: true,
+                startDate: '',
+                endDate: '',
+            })) as Tour[];
+            setWishlistTours(tours);
         } catch (error) {
             console.error('Error loading wishlist:', error);
         } finally {
@@ -60,17 +58,14 @@ export default function WishlistPage() {
         }
     };
 
-    const removeFromWishlist = (tourID: string) => {
-        const savedWishlist = localStorage.getItem('wishlist');
-        if (savedWishlist) {
-            const tourIDs = JSON.parse(savedWishlist) as string[];
-            const updatedIDs = tourIDs.filter(id => id !== tourID);
-            localStorage.setItem('wishlist', JSON.stringify(updatedIDs));
+    const removeFromWishlist = async (tourID: string) => {
+        try {
+            await wishlistService.removeFromWishlist(tourID);
             loadWishlist();
+        } catch (error) {
+            console.error('Error removing from wishlist:', error);
         }
-    };
-
-    if (loading) {
+    }; if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center pt-20">
                 <p className="text-gray-500">Đang tải...</p>
@@ -347,8 +342,8 @@ function WishlistTourCard({ tour, onRemove }: WishlistTourCardProps) {
                                     <Star
                                         key={star}
                                         className={`w-4 h-4 ${star <= Math.round(averageRating)
-                                                ? 'fill-yellow-400 text-yellow-400'
-                                                : 'fill-gray-300 text-gray-300'
+                                            ? 'fill-yellow-400 text-yellow-400'
+                                            : 'fill-gray-300 text-gray-300'
                                             }`}
                                     />
                                 ))}

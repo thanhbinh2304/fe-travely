@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import authService from '@/app/services/authServiceProvider';
+import { wishlistService } from '@/app/services/wishlistService';
 import { User } from '@/types/auth';
 
 
@@ -16,6 +17,8 @@ export function useAuth() {
       if (authService.isAuthenticated()) {
         const userData = await authService.getProfile();
         setUser(userData);
+        // Sync wishlist when user is authenticated
+        await wishlistService.syncWishlistOnLogin();
       }
     } catch (error) {
       console.error('Auth check failed:', error);

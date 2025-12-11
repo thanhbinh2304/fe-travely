@@ -8,6 +8,7 @@ import { useScrollSearch } from '@/hooks/useScrollSearch';
 import SearchBar from './SearchBar';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/client/login';
+import { wishlistService } from '@/app/services/wishlistService';
 
 type DropdownType = 'places' | 'things' | 'trip' | 'profile' | null;
 
@@ -15,6 +16,7 @@ export default function HeaderClient() {
     const [scrolled, setScrolled] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<DropdownType>(null);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [wishlistCount, setWishlistCount] = useState(0);
     const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { showSearchInHeader } = useScrollSearch();
     const { user, isAuthenticated, logout, refreshUser } = useAuth();
@@ -25,6 +27,26 @@ export default function HeaderClient() {
             router.push(`/tours?search=${encodeURIComponent(query.trim())}`);
         }
     };
+
+    const updateWishlistCount = async () => {
+        const wishlist = await wishlistService.getWishlist();
+        setWishlistCount(wishlist.length);
+    };
+
+    useEffect(() => {
+        // Initial count
+        updateWishlistCount();
+
+        // Listen for wishlist updates
+        const handleWishlistUpdate = () => {
+            updateWishlistCount();
+        };
+
+        window.addEventListener('wishlist-updated', handleWishlistUpdate);
+        return () => {
+            window.removeEventListener('wishlist-updated', handleWishlistUpdate);
+        };
+    }, []);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -161,9 +183,14 @@ export default function HeaderClient() {
                         {/* Right Side Actions */}
                         <div className="flex items-center space-x-6">
                             {/* Wishlist */}
-                            <Link href="/wishlist" className="flex flex-col items-center group">
+                            <Link href="/wishlist" className="flex flex-col items-center group relative">
                                 <Heart className="w-5 h-5 text-gray-700 group-hover:text-red-500 transition" />
                                 <span className="text-xs text-gray-600 mt-1">Yêu thích</span>
+                                {wishlistCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                                        {wishlistCount > 99 ? '99+' : wishlistCount}
+                                    </span>
+                                )}
                             </Link>
 
                             {/* Cart */}

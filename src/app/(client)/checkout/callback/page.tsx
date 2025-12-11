@@ -39,7 +39,7 @@ function CallbackContent() {
                         try {
                             const checkoutData = JSON.parse(checkoutDataStr);
                             const checkoutID = checkoutData.checkoutID;
-                            
+
                             if (checkoutID) {
                                 // Cancel the payment
                                 const cancelResponse = await fetch(`${API_URL}/payment/cancel`, {
@@ -51,7 +51,7 @@ function CallbackContent() {
                                     },
                                     body: JSON.stringify({ checkoutID })
                                 });
-                                
+
                                 if (cancelResponse.ok) {
                                     console.log('[MoMo] Payment cancelled successfully');
                                     // Clear checkout data

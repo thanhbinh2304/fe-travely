@@ -77,8 +77,8 @@ export default function CheckoutPage() {
 
     const calculateSubtotal = () => {
         return cartItems.reduce((sum, item) => {
-            const price = typeof item.discountedPrice === 'number' 
-                ? item.discountedPrice 
+            const price = typeof item.discountedPrice === 'number'
+                ? item.discountedPrice
                 : parseFloat(String(item.discountedPrice)) || 0;
             return sum + price;
         }, 0);

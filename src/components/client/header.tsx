@@ -9,6 +9,7 @@ import SearchBar from './SearchBar';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/client/login';
 import { wishlistService } from '@/app/services/wishlistService';
+import { cartService } from '@/app/services/cartService';
 
 type DropdownType = 'places' | 'things' | 'trip' | 'profile' | null;
 
@@ -17,6 +18,7 @@ export default function HeaderClient() {
     const [activeDropdown, setActiveDropdown] = useState<DropdownType>(null);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [wishlistCount, setWishlistCount] = useState(0);
+    const [cartCount, setCartCount] = useState(0);
     const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { showSearchInHeader } = useScrollSearch();
     const { user, isAuthenticated, logout, refreshUser } = useAuth();
@@ -33,18 +35,50 @@ export default function HeaderClient() {
         setWishlistCount(wishlist.length);
     };
 
+    const updateCartCount = async () => {
+        console.log('[Header] Updating cart count...');
+        // Force clear cache before getting count
+        cartService.clearCache();
+        const count = await cartService.getCartCount();
+        console.log('[Header] Cart count:', count);
+        setCartCount(count);
+    };
+
     useEffect(() => {
-        // Initial count
+        console.log('[Header] Component mounted, setting up listeners');
+        // Initial counts
         updateWishlistCount();
+        updateCartCount();
 
         // Listen for wishlist updates
         const handleWishlistUpdate = () => {
+            console.log('[Header] wishlist-updated event received');
             updateWishlistCount();
         };
 
+        // Listen for cart updates
+        const handleCartUpdate = () => {
+            console.log('[Header] cart-updated event received');
+            updateCartCount();
+        };
+
+        const handleStorageChange = (e: StorageEvent) => {
+            console.log('[Header] storage event received:', e.key);
+            if (e.key === 'cart-trigger') {
+                console.log('[Header] cart-trigger detected, updating count');
+                updateCartCount();
+            }
+        };
+
         window.addEventListener('wishlist-updated', handleWishlistUpdate);
+        window.addEventListener('cart-updated', handleCartUpdate);
+        window.addEventListener('storage', handleStorageChange as any);
+
         return () => {
+            console.log('[Header] Component unmounting, removing listeners');
             window.removeEventListener('wishlist-updated', handleWishlistUpdate);
+            window.removeEventListener('cart-updated', handleCartUpdate);
+            window.removeEventListener('storage', handleStorageChange as any);
         };
     }, []);
 
@@ -104,7 +138,7 @@ export default function HeaderClient() {
                         {!showSearchInHeader && (
                             <nav className="hidden md:flex items-center space-x-8">
                                 {/* Places to see */}
-                                <div
+                                {/* <div
                                     className="relative group"
                                     onMouseEnter={() => handleDropdownEnter('places')}
                                     onMouseLeave={handleDropdownLeave}
@@ -126,10 +160,10 @@ export default function HeaderClient() {
                                             </Link>
                                         </div>
                                     )}
-                                </div>
+                                </div> */}
 
                                 {/* Things to do */}
-                                <div
+                                {/* <div
                                     className="relative group"
                                     onMouseEnter={() => handleDropdownEnter('things')}
                                     onMouseLeave={handleDropdownLeave}
@@ -151,10 +185,10 @@ export default function HeaderClient() {
                                             </Link>
                                         </div>
                                     )}
-                                </div>
+                                </div> */}
 
                                 {/* Trip inspiration */}
-                                <div
+                                {/* <div
                                     className="relative group"
                                     onMouseEnter={() => handleDropdownEnter('trip')}
                                     onMouseLeave={handleDropdownLeave}
@@ -176,7 +210,7 @@ export default function HeaderClient() {
                                             </Link>
                                         </div>
                                     )}
-                                </div>
+                                </div> */}
                             </nav>
                         )}
 
@@ -197,10 +231,9 @@ export default function HeaderClient() {
                             <Link href="/cart" className="flex flex-col items-center group relative">
                                 <ShoppingCart className="w-5 h-5 text-gray-700 group-hover:text-blue-600 transition" />
                                 <span className="text-xs text-gray-600 mt-1">Giỏ hàng</span>
-                                {/* Hidden by default, will be implemented later */}
-                                {false && (
+                                {cartCount > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
-                                        0
+                                        {cartCount > 99 ? '99+' : cartCount}
                                     </span>
                                 )}
                             </Link>

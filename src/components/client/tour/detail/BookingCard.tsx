@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Users, Heart } from 'lucide-react';
+import { Calendar, Users, Heart, ShoppingCart } from 'lucide-react';
 import { Tour } from '@/types/tour';
 import { toast } from 'sonner';
+import { cartService } from '@/app/services/cartService';
+import { reviewService } from '@/app/services/reviewService';
 
 interface BookingCardProps {
     tour: Tour;
@@ -20,7 +22,7 @@ export default function BookingCard({ tour }: BookingCardProps) {
     const isAvailable = tour.availability && tour.quantity > 0;
     const totalPrice = (adults * tour.priceAdult) + (children * tour.priceChild);
 
-    const handleBookNow = () => {
+    const handleBookNow = async () => {
         if (!selectedDate) {
             toast.error('Vui lòng chọn ngày khởi hành');
             return;
@@ -31,22 +33,112 @@ export default function BookingCard({ tour }: BookingCardProps) {
             return;
         }
 
-        // Navigate to booking page with params
-        const bookingData = {
-            tourID: tour.tourID,
-            date: selectedDate,
-            adults,
-            children,
-            totalPrice,
-        };
+        try {
+            // Get tour image
+            const mainImage = tour.images && tour.images.length > 0
+                ? tour.images[0].imageUrl
+                : '';
 
-        localStorage.setItem('pendingBooking', JSON.stringify(bookingData));
-        router.push(`/booking/${tour.tourID}`);
+            // Calculate average rating
+            const averageRating = tour.reviews
+                ? reviewService.calculateAverageRating(tour.reviews)
+                : 0;
+
+            const calculatedTotalPrice = (tour.priceAdult * adults) + (tour.priceChild * children);
+
+            // Prepare item data for localStorage (guests)
+            const itemData = {
+                title: tour.title,
+                imageUrl: mainImage,
+                rating: averageRating,
+                reviewCount: tour.reviews?.length || 0,
+                time: new Date(tour.startDate).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                language: 'Tiếng Việt',
+                freeCancellation: true,
+                originalPrice: 0,
+                discountedPrice: calculatedTotalPrice,
+            };
+
+            // Add to cart first (creates booking if authenticated)
+            await cartService.addToCart(
+                tour.tourID.toString(),
+                selectedDate,
+                adults,
+                children,
+                undefined, // specialRequests
+                itemData
+            );
+
+            // Then navigate to checkout
+            router.push('/checkout');
+        } catch (error) {
+            console.error('[BookingCard] Error booking now:', error);
+            toast.error('Không thể đặt tour, vui lòng thử lại');
+        }
     };
 
     const toggleWishlist = () => {
         setIsWishlisted(!isWishlisted);
         toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    };
+
+    const handleAddToCart = async () => {
+        if (!selectedDate) {
+            toast.error('Vui lòng chọn ngày khởi hành');
+            return;
+        }
+
+        if (adults < 1) {
+            toast.error('Phải có ít nhất 1 người lớn');
+            return;
+        }
+
+        try {
+            // Get tour image
+            const mainImage = tour.images && tour.images.length > 0
+                ? tour.images[0].imageUrl
+                : '';
+
+            // Calculate average rating
+            const averageRating = tour.reviews
+                ? reviewService.calculateAverageRating(tour.reviews)
+                : 0;
+
+            const totalPrice = (tour.priceAdult * adults) + (tour.priceChild * children);
+
+            // For guests using localStorage, we need to pass the full item data
+            const itemData = {
+                title: tour.title,
+                imageUrl: mainImage,
+                rating: averageRating,
+                reviewCount: tour.reviews?.length || 0,
+                time: new Date(tour.startDate).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                language: 'Tiếng Việt',
+                freeCancellation: true,
+                originalPrice: 0,
+                discountedPrice: totalPrice,
+            };
+
+            await cartService.addToCart(
+                tour.tourID.toString(),
+                selectedDate,
+                adults,
+                children,
+                undefined, // specialRequests
+                itemData
+            );
+
+            toast.success('Đã thêm vào giỏ hàng!');
+        } catch (error) {
+            console.error('[BookingCard] Error adding to cart:', error);
+            toast.error('Không thể thêm vào giỏ hàng');
+        }
     };
 
     return (
@@ -181,6 +273,18 @@ export default function BookingCard({ tour }: BookingCardProps) {
                         }`}
                 >
                     {isAvailable ? 'Đặt ngay' : 'Không khả dụng'}
+                </button>
+
+                <button
+                    onClick={handleAddToCart}
+                    disabled={!isAvailable}
+                    className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${isAvailable
+                        ? 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50'
+                        : 'border-2 border-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                >
+                    <ShoppingCart className="w-5 h-5" />
+                    Thêm vào giỏ hàng
                 </button>
 
                 <button

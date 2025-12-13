@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { GenericDataTable } from "@/components/admin/GenericDataTable"
-import { paymentColumns } from "./columns"
+import { createPaymentColumns } from "./columns"
 import { paymentService } from "@/app/services/paymentService"
 import { Payment } from "@/types/payment"
 import { toast } from "sonner"
@@ -31,6 +31,18 @@ export default function PaymentsPage() {
         }
     }
 
+    const handleDelete = async (checkoutID: number) => {
+        try {
+            await paymentService.adminDeletePayment(checkoutID)
+            toast.success('Đã xóa payment thành công')
+            // Refresh list
+            fetchPayments()
+        } catch (error: any) {
+            console.error('Error deleting payment:', error)
+            toast.error(error.message || 'Không thể xóa payment')
+        }
+    }
+
     if (isLoading) {
         return (
             <>
@@ -52,7 +64,7 @@ export default function PaymentsPage() {
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 <div className="rounded-lg border bg-card p-6">
                     <GenericDataTable
-                        columns={paymentColumns}
+                        columns={createPaymentColumns(handleDelete)}
                         data={payments}
                         searchKey="checkoutID"
                         searchPlaceholder="Tìm kiếm theo mã thanh toán..."

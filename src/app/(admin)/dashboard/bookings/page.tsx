@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { GenericDataTable } from "@/components/admin/GenericDataTable"
-import { bookingColumns } from "./columns"
+import { createBookingColumns } from "./columns"
 import { bookingService } from "@/app/services/bookingService"
 import { Booking } from "@/types/booking"
 import { toast } from "sonner"
@@ -31,6 +31,18 @@ export default function BookingsPage() {
         }
     }
 
+    const handleDelete = async (bookingID: number) => {
+        try {
+            await bookingService.adminDeleteBooking(bookingID)
+            toast.success('Đã xóa booking thành công')
+            // Refresh list
+            fetchBookings()
+        } catch (error: any) {
+            console.error('Error deleting booking:', error)
+            toast.error(error.message || 'Không thể xóa booking')
+        }
+    }
+
     if (isLoading) {
         return (
             <>
@@ -52,9 +64,9 @@ export default function BookingsPage() {
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 <div className="rounded-lg border bg-card p-6">
                     <GenericDataTable
-                        columns={bookingColumns}
+                        columns={createBookingColumns(handleDelete)}
                         data={bookings}
-                        searchKey="userName"
+                        searchKey="user.userName"
                         searchPlaceholder="Tìm kiếm theo tên khách hàng..."
                         addNewUrl="/dashboard/bookings/create"
                         addNewLabel="Thêm booking mới"

@@ -488,6 +488,34 @@ class PaymentService {
             errors,
         };
     }
+
+    // Alias method for consistency with component usage (uses admin route)
+    async getPaymentDetails(checkoutID: number): Promise<ApiResponse<Payment>> {
+        const response = await fetch(`${API_URL}/admin/payments/${checkoutID}`, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw data;
+        }
+        return data;
+    }
+
+    // Delete payment (Admin route)
+    async adminDeletePayment(checkoutID: number): Promise<ApiResponse<null>> {
+        const response = await fetch(`${API_URL}/admin/payments/${checkoutID}`, {
+            method: 'DELETE',
+            headers: this.getHeaders(true),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw data;
+        }
+        return data;
+    }
 }
 
 export const paymentService = new PaymentService();

@@ -51,7 +51,7 @@ export function BookingDetailCards({ booking }: BookingDetailCardsProps) {
                             <IconUsers className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Tên khách hàng</p>
-                                <p className="text-sm font-semibold">{booking.userName}</p>
+                                <p className="text-sm font-semibold">{booking.user?.userName || 'N/A'}</p>
                             </div>
                         </div>
                         <Separator />
@@ -59,7 +59,7 @@ export function BookingDetailCards({ booking }: BookingDetailCardsProps) {
                             <IconMail className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Email</p>
-                                <p className="text-sm">{booking.userEmail}</p>
+                                <p className="text-sm">{booking.user?.email || 'N/A'}</p>
                             </div>
                         </div>
                         <Separator />
@@ -67,7 +67,7 @@ export function BookingDetailCards({ booking }: BookingDetailCardsProps) {
                             <IconPhone className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Số điện thoại</p>
-                                <p className="text-sm">{booking.userPhone || 'Chưa cập nhật'}</p>
+                                <p className="text-sm">{booking.user?.phoneNumber || 'Chưa cập nhật'}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -84,7 +84,7 @@ export function BookingDetailCards({ booking }: BookingDetailCardsProps) {
                             <IconMapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Tên tour</p>
-                                <p className="text-sm font-semibold">{booking.tourTitle}</p>
+                                <p className="text-sm font-semibold">{booking.tour?.title || 'N/A'}</p>
                             </div>
                         </div>
                         <Separator />
@@ -92,7 +92,7 @@ export function BookingDetailCards({ booking }: BookingDetailCardsProps) {
                             <IconMapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground">Điểm đến</p>
-                                <p className="text-sm">{booking.tourDestination}</p>
+                                <p className="text-sm">{booking.tour?.destination || 'N/A'}</p>
                             </div>
                         </div>
                         <Separator />

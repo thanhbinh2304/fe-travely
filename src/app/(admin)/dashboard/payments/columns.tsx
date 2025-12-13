@@ -48,8 +48,16 @@ const getPaymentMethodName = (method: string) => {
 }
 
 // Actions cell component
-function PaymentActionsCell({ payment }: { payment: Payment }) {
+function PaymentActionsCell({ payment, onDelete }: { payment: Payment, onDelete?: (id: number) => void }) {
     const router = useRouter()
+
+    const handleDelete = async () => {
+        if (window.confirm(`Bạn có chắc muốn xóa payment #${payment.checkoutID}?`)) {
+            if (onDelete) {
+                onDelete(payment.checkoutID)
+            }
+        }
+    }
 
     return (
         <DropdownMenu>
@@ -76,7 +84,7 @@ function PaymentActionsCell({ payment }: { payment: Payment }) {
                         Xác nhận thanh toán
                     </DropdownMenuItem>
                 )}
-                {payment.paymentStatus === 'completed' && (
+                {(payment.paymentStatus === 'completed' || payment.paymentStatus === 'paid') && (
                     <DropdownMenuItem onClick={() => toast.info(`Xử lý hoàn tiền: ${payment.checkoutID}`)}>
                         <IconRefresh className="mr-2 h-4 w-4" />
                         Hoàn tiền
@@ -84,7 +92,7 @@ function PaymentActionsCell({ payment }: { payment: Payment }) {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                    onClick={() => toast.error(`Delete payment: ${payment.checkoutID}`)}
+                    onClick={handleDelete}
                     className="text-red-600"
                 >
                     <IconTrash className="mr-2 h-4 w-4" />
@@ -97,30 +105,30 @@ function PaymentActionsCell({ payment }: { payment: Payment }) {
 
 export const paymentColumns: ColumnDef<Payment>[] = [
     {
-       id: "select",
-               header: ({ table }) => (
-                   <div className="flex items-center justify-center">
-                       <Checkbox
-                           checked={
-                               table.getIsAllPageRowsSelected() ||
-                               (table.getIsSomePageRowsSelected() && "indeterminate")
-                           }
-                           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                           aria-label="Select all"
-                       />
-                   </div>
-               ),
-               cell: ({ row }) => (
-                   <div className="flex items-center justify-center">
-                       <Checkbox
-                           checked={row.getIsSelected()}
-                           onCheckedChange={(value) => row.toggleSelected(!!value)}
-                           aria-label="Select row"
-                       />
-                   </div>
-               ),
-               enableSorting: false,
-               enableHiding: false,
+        id: "select",
+        header: ({ table }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            </div>
+        ),
+        cell: ({ row }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
     },
     {
         accessorKey: "checkoutID",
@@ -162,14 +170,15 @@ export const paymentColumns: ColumnDef<Payment>[] = [
         header: "Trạng thái",
         cell: ({ row }) => {
             const status = row.getValue("paymentStatus") as string
-            const statusMap = {
+            const statusMap: Record<string, { label: string; class: string }> = {
                 pending: { label: "Chờ thanh toán", class: "bg-yellow-100 text-yellow-800 border-yellow-300" },
                 completed: { label: "Đã thanh toán", class: "bg-green-100 text-green-800 border-green-300" },
+                paid: { label: "Đã thanh toán", class: "bg-green-100 text-green-800 border-green-300" },
                 failed: { label: "Thất bại", class: "bg-red-100 text-red-800 border-red-300" },
                 refunded: { label: "Đã hoàn tiền", class: "bg-gray-100 text-gray-800 border-gray-300" },
                 partially_refunded: { label: "Hoàn một phần", class: "bg-orange-100 text-orange-800 border-orange-300" },
             }
-            const statusInfo = statusMap[status as keyof typeof statusMap]
+            const statusInfo = statusMap[status] || { label: status, class: "bg-gray-100 text-gray-800 border-gray-300" }
             return <Badge className={statusInfo.class}>{statusInfo.label}</Badge>
         },
     },
@@ -216,3 +225,16 @@ export const paymentColumns: ColumnDef<Payment>[] = [
         cell: ({ row }) => <PaymentActionsCell payment={row.original} />,
     },
 ]
+
+// Create columns with delete callback
+export const createPaymentColumns = (onDelete?: (id: number) => void): ColumnDef<Payment>[] => {
+    const columns = [...paymentColumns]
+    const actionsIndex = columns.findIndex(col => col.id === 'actions')
+    if (actionsIndex !== -1) {
+        columns[actionsIndex] = {
+            id: "actions",
+            cell: ({ row }) => <PaymentActionsCell payment={row.original} onDelete={onDelete} />,
+        }
+    }
+    return columns
+}

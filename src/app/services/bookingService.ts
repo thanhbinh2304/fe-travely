@@ -339,6 +339,39 @@ class BookingService {
         };
         return colorMap[status];
     }
+
+    // Alias method for consistency with component usage (User route)
+    async getBookingById(bookingID: number): Promise<ApiResponse<Booking>> {
+        return this.show(bookingID.toString());
+    }
+
+    // Get booking by ID (Admin route)
+    async adminGetBookingById(bookingID: number): Promise<ApiResponse<Booking>> {
+        const response = await fetch(`${API_URL}/admin/bookings/${bookingID}`, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw data;
+        }
+        return data;
+    }
+
+    // Delete booking (Admin route)
+    async adminDeleteBooking(bookingID: number): Promise<ApiResponse<null>> {
+        const response = await fetch(`${API_URL}/admin/bookings/${bookingID}`, {
+            method: 'DELETE',
+            headers: this.getHeaders(true),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw data;
+        }
+        return data;
+    }
 }
 
 export const bookingService = new BookingService();

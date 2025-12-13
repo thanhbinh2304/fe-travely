@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { IconArrowLeft, IconEdit, IconTrash, IconCheck, IconRefresh } from "@tabler/icons-react"
 import { SiteHeader } from "@/components/site-header"
@@ -7,16 +8,46 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GenericDetailHeader } from "@/components/admin/GenericDetailHeader"
 import { PaymentDetailCards } from "@/components/admin/PaymentDetailCards"
-import { mockPaymentsData } from "../mockPaymentsData"
+import { paymentService } from "@/app/services/paymentService"
+import { Payment } from "@/types/payment"
 import { toast } from "sonner"
 
 export default function PaymentDetailPage() {
     const params = useParams()
     const router = useRouter()
     const checkoutId = params.id as string
+    const [payment, setPayment] = useState<Payment | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
 
-    // Tìm payment theo ID
-    const payment = mockPaymentsData.find(p => p.checkoutID === checkoutId)
+    useEffect(() => {
+        fetchPaymentDetail()
+    }, [checkoutId])
+
+    const fetchPaymentDetail = async () => {
+        try {
+            setIsLoading(true)
+            const response = await paymentService.getPaymentDetails(parseInt(checkoutId))
+            setPayment(response.data)
+        } catch (error) {
+            console.error('Error fetching payment detail:', error)
+            toast.error('Không thể tải thông tin thanh toán')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <>
+                <SiteHeader title="Chi tiết thanh toán" />
+                <div className="flex flex-1 flex-col items-center justify-center p-4">
+                    <div className="text-center">
+                        <p className="text-muted-foreground">Đang tải...</p>
+                    </div>
+                </div>
+            </>
+        )
+    }
 
     if (!payment) {
         return (
@@ -40,6 +71,7 @@ export default function PaymentDetailPage() {
     const statusBadge = (() => {
         switch (payment.paymentStatus) {
             case 'completed':
+            case 'paid':
                 return <Badge className="bg-green-100 text-green-800 border-green-300">Đã thanh toán</Badge>
             case 'pending':
                 return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">Chờ thanh toán</Badge>
@@ -49,6 +81,8 @@ export default function PaymentDetailPage() {
                 return <Badge className="bg-gray-100 text-gray-800 border-gray-300">Đã hoàn tiền</Badge>
             case 'partially_refunded':
                 return <Badge className="bg-orange-100 text-orange-800 border-orange-300">Hoàn một phần</Badge>
+            default:
+                return <Badge className="bg-gray-100 text-gray-800 border-gray-300">Chưa rõ</Badge>
         }
     })()
 
@@ -73,7 +107,7 @@ export default function PaymentDetailPage() {
                     Xác nhận thanh toán
                 </Button>
             )}
-            {payment.paymentStatus === 'completed' && !payment.refundAmount && (
+            {(payment.paymentStatus === 'completed' || payment.paymentStatus === 'paid') && !payment.refundAmount && (
                 <Button
                     variant="outline"
                     size="sm"
@@ -87,7 +121,17 @@ export default function PaymentDetailPage() {
             <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => toast.error(`Delete payment: ${payment.checkoutID}`)}
+                onClick={async () => {
+                    if (window.confirm(`Bạn có chắc muốn xóa payment #${payment.checkoutID}?`)) {
+                        try {
+                            await paymentService.adminDeletePayment(payment.checkoutID)
+                            toast.success('Đã xóa payment thành công')
+                            router.push('/dashboard/payments')
+                        } catch (error: any) {
+                            toast.error(error.message || 'Không thể xóa payment')
+                        }
+                    }
+                }}
             >
                 <IconTrash className="mr-2 h-4 w-4" />
                 Xóa

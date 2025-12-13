@@ -34,8 +34,16 @@ const formatDate = (dateString: string) => {
 }
 
 // Actions cell component
-function BookingActionsCell({ booking }: { booking: Booking }) {
+function BookingActionsCell({ booking, onDelete }: { booking: Booking, onDelete?: (id: number) => void }) {
     const router = useRouter()
+
+    const handleDelete = async () => {
+        if (window.confirm(`Bạn có chắc muốn xóa booking #${booking.bookingID}?`)) {
+            if (onDelete) {
+                onDelete(booking.bookingID)
+            }
+        }
+    }
 
     return (
         <DropdownMenu>
@@ -70,7 +78,7 @@ function BookingActionsCell({ booking }: { booking: Booking }) {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                    onClick={() => toast.error(`Delete booking: ${booking.bookingID}`)}
+                    onClick={handleDelete}
                     className="text-red-600"
                 >
                     <IconTrash className="mr-2 h-4 w-4" />
@@ -84,29 +92,29 @@ function BookingActionsCell({ booking }: { booking: Booking }) {
 export const bookingColumns: ColumnDef<Booking>[] = [
     {
         id: "select",
-                header: ({ table }) => (
-                    <div className="flex items-center justify-center">
-                        <Checkbox
-                            checked={
-                                table.getIsAllPageRowsSelected() ||
-                                (table.getIsSomePageRowsSelected() && "indeterminate")
-                            }
-                            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                            aria-label="Select all"
-                        />
-                    </div>
-                ),
-                cell: ({ row }) => (
-                    <div className="flex items-center justify-center">
-                        <Checkbox
-                            checked={row.getIsSelected()}
-                            onCheckedChange={(value) => row.toggleSelected(!!value)}
-                            aria-label="Select row"
-                        />
-                    </div>
-                ),
-                enableSorting: false,
-                enableHiding: false,
+        header: ({ table }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            </div>
+        ),
+        cell: ({ row }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
     },
     // {
     //     accessorKey: "bookingID",
@@ -116,27 +124,27 @@ export const bookingColumns: ColumnDef<Booking>[] = [
     //     ),
     // },
     {
-        accessorKey: "userName",
+        accessorKey: "user.userName",
         header: "Khách hàng",
         cell: ({ row }) => {
             const booking = row.original
             return (
                 <div>
-                    <div className="font-medium">{booking.userName}</div>
-                    <div className="text-sm text-muted-foreground">{booking.userEmail}</div>
+                    <div className="font-medium">{booking.user?.userName || 'N/A'}</div>
+                    <div className="text-sm text-muted-foreground">{booking.user?.email || ''}</div>
                 </div>
             )
         },
     },
     {
-        accessorKey: "tourTitle",
+        accessorKey: "tour.title",
         header: "Tour",
         cell: ({ row }) => {
             const booking = row.original
             return (
                 <div className="max-w-[300px]">
-                    <div className="font-medium truncate">{booking.tourTitle}</div>
-                    <div className="text-sm text-muted-foreground">{booking.tourDestination}</div>
+                    <div className="font-medium truncate">{booking.tour?.title || 'N/A'}</div>
+                    <div className="text-sm text-muted-foreground">{booking.tour?.destination || ''}</div>
                 </div>
             )
         },
@@ -202,3 +210,16 @@ export const bookingColumns: ColumnDef<Booking>[] = [
         cell: ({ row }) => <BookingActionsCell booking={row.original} />,
     },
 ]
+
+// Create columns with delete callback
+export const createBookingColumns = (onDelete?: (id: number) => void): ColumnDef<Booking>[] => {
+    const columns = [...bookingColumns]
+    const actionsIndex = columns.findIndex(col => col.id === 'actions')
+    if (actionsIndex !== -1) {
+        columns[actionsIndex] = {
+            id: "actions",
+            cell: ({ row }) => <BookingActionsCell booking={row.original} onDelete={onDelete} />,
+        }
+    }
+    return columns
+}

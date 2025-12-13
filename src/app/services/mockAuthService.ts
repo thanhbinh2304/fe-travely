@@ -65,9 +65,20 @@ class MockAuthService {
         this.setCookie('access_token', token, 7);
     }
 
+    saveRefreshToken(refreshToken: string): void {
+        if (typeof window === 'undefined') return;
+        localStorage.setItem('refresh_token', refreshToken);
+    }
+
+    getRefreshToken(): string | null {
+        if (typeof window === 'undefined') return null;
+        return localStorage.getItem('refresh_token');
+    }
+
     removeToken(): void {
         if (typeof window === 'undefined') return;
         localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         this.deleteCookie('access_token');
     }

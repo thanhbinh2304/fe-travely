@@ -8,9 +8,10 @@ interface LoginFormProps {
   onSubmit: (login: string, password: string) => Promise<void>;
   isLoading: boolean;
   error?: string;
+  onForgotPassword?: () => void;
 }
 
-export default function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
+export default function LoginForm({ onSubmit, isLoading, error, onForgotPassword }: LoginFormProps) {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
 
@@ -26,7 +27,7 @@ export default function LoginForm({ onSubmit, isLoading, error }: LoginFormProps
           {error}
         </div>
       )}
-      
+
       <Input
         id="login"
         label="Username or Email"
@@ -36,7 +37,7 @@ export default function LoginForm({ onSubmit, isLoading, error }: LoginFormProps
         placeholder="Enter username or email"
         required
       />
-      
+
       <Input
         id="password"
         label="Password"
@@ -51,12 +52,22 @@ export default function LoginForm({ onSubmit, isLoading, error }: LoginFormProps
           <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
           <span className="text-gray-600">Remember me</span>
         </label>
-        <a href="#" className="text-blue-600 hover:text-blue-700 hover:underline">
-          Forgot password?
-        </a>
+        {onForgotPassword ? (
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            Forgot password?
+          </button>
+        ) : (
+          <a href="#" className="text-blue-600 hover:text-blue-700 hover:underline">
+            Forgot password?
+          </a>
+        )}
       </div>
-      <PrimaryButton 
-        text={isLoading ? "Logging in..." : "Login"} 
+      <PrimaryButton
+        text={isLoading ? "Logging in..." : "Login"}
         type="submit"
         disabled={isLoading}
       />

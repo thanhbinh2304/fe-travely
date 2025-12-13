@@ -14,13 +14,23 @@ interface RegisterFormProps {
   isLoading: boolean;
   errors?: Record<string, string[]>;
   generalError?: string;
+  showResendVerification?: boolean;
+  onResendVerification?: (email: string) => Promise<void>;
 }
 
-export default function RegisterForm({ onSubmit, isLoading, errors, generalError }: RegisterFormProps) {
+export default function RegisterForm({
+  onSubmit,
+  isLoading,
+  errors,
+  generalError,
+  showResendVerification,
+  onResendVerification
+}: RegisterFormProps) {
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -106,6 +116,21 @@ export default function RegisterForm({ onSubmit, isLoading, errors, generalError
         type="submit"
         disabled={isLoading}
       />
+
+      {showResendVerification && onResendVerification && email && (
+        <button
+          type="button"
+          onClick={async () => {
+            setResendLoading(true);
+            await onResendVerification(email);
+            setResendLoading(false);
+          }}
+          disabled={resendLoading || !email}
+          className="w-full text-sm text-blue-600 hover:underline disabled:opacity-50"
+        >
+          {resendLoading ? 'Sending...' : 'Resend Verification Email'}
+        </button>
+      )}
     </form>
   );
 }

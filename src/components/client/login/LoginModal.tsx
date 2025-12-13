@@ -1,7 +1,7 @@
 // components/client/Login/LoginModal.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFacebookLogin } from '@/hooks/useFacebookLogin';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -9,6 +9,8 @@ import { Modal, ModalHeader } from '@/components/shared/Modal';
 import SocialLoginButtons from './SocialLoginButton';
 import LoginForm from './EmailLoginForm';
 import RegisterForm from './RegisterForm';
+import ForgotPasswordForm from './ForgotPasswordForm';
+import ResetPasswordForm from './ResetPasswordForm';
 import LoginTerms from './LoginTerms';
 import authService from '@/app/services/authServiceProvider';
 import { ApiError } from '@/types/auth';
@@ -17,19 +19,37 @@ import { ApiError } from '@/types/auth';
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialMode?: ViewMode;
+  initialToken?: string;
 }
 
-type ViewMode = 'login' | 'register';
+type ViewMode = 'login' | 'register' | 'forgot-password' | 'reset-password';
 
-export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, initialMode, initialToken }: LoginModalProps) {
   const router = useRouter();
   const { login: facebookLogin } = useFacebookLogin();
-  const [viewMode, setViewMode] = useState<ViewMode>('login');
+  const [viewMode, setViewMode] = useState<ViewMode>(initialMode || 'login');
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string>();
   const [registerErrors, setRegisterErrors] = useState<Record<string, string[]>>();
   const [registerGeneralError, setRegisterGeneralError] = useState<string>();
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState(false);
+  const [forgotPasswordError, setForgotPasswordError] = useState<string>();
+  const [resetToken, setResetToken] = useState(initialToken || '');
+  const [resetPasswordError, setResetPasswordError] = useState<string>();
+  const [resetPasswordSuccess, setResetPasswordSuccess] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
 
+  // Update viewMode and resetToken when props change
+  useEffect(() => {
+    if (initialMode && isOpen) {
+      setViewMode(initialMode);
+    }
+    if (initialToken && isOpen) {
+      setResetToken(initialToken);
+    }
+  }, [initialMode, initialToken, isOpen]);
 
   const handleFacebookLogin = () => {
     setIsLoading(true);
@@ -144,8 +164,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       console.error('Login error details:', error);
       const apiError = error as ApiError;
 
+      // Check if email verification is required
+      if (apiError.requires_verification) {
+        setLoginError(apiError.msg + ' You can request a new verification email from the registration form.');
+      }
       // Xử lý validation errors từ Laravel
-      if (apiError.errors) {
+      else if (apiError.errors) {
         const errorMessages = Object.values(apiError.errors).flat();
         setLoginError(errorMessages.join(', '));
       } else {
@@ -167,10 +191,20 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setRegisterErrors(undefined);
       setRegisterGeneralError(undefined);
 
-      await authService.register(data);
+      const response = await authService.register(data);
 
-      onClose();
-      router.refresh();
+      // Check if email verification is required
+      if (response.data?.requires_verification) {
+        setRegisterGeneralError('✅ Registration successful! Please check your email to verify your account before logging in.');
+        setShowResendVerification(true);
+        // Show debug verification URL in console if available
+        if (response.data.debug?.verification_url) {
+          console.log('Verification URL:', response.data.debug.verification_url);
+        }
+      } else {
+        onClose();
+        router.refresh();
+      }
 
     } catch (error) {
       const apiError = error as ApiError;
@@ -190,17 +224,167 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setLoginError(undefined);
     setRegisterErrors(undefined);
     setRegisterGeneralError(undefined);
+    setForgotPasswordError(undefined);
+    setForgotPasswordSuccess(false);
+    setResetPasswordError(undefined);
+    setResetPasswordSuccess(false);
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setForgotPasswordError(undefined);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api'}/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotPasswordEmail }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setForgotPasswordSuccess(true);
+        // If debug info available, auto-fill token (development only)
+        if (data.debug?.token) {
+          setResetToken(data.debug.token);
+        }
+      } else {
+        setForgotPasswordError(data.message || 'Failed to send reset email');
+      }
+    } catch (error) {
+      setForgotPasswordError('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (password: string, passwordConfirmation: string) => {
+    setIsLoading(true);
+    setResetPasswordError(undefined);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api'}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: resetToken,
+          password,
+          password_confirmation: passwordConfirmation,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setResetPasswordSuccess(true);
+        setTimeout(() => {
+          setViewMode('login');
+          setResetPasswordSuccess(false);
+          setResetToken('');
+        }, 2000);
+      } else {
+        setResetPasswordError(data.message || data.errors?.password?.[0] || 'Failed to reset password');
+      }
+    } catch (error) {
+      setResetPasswordError('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async (email: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api'}/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setRegisterGeneralError('✅ Verification email sent! Please check your inbox (and spam folder).');
+        if (data.debug?.verification_url) {
+          console.log('Verification URL:', data.debug.verification_url);
+        }
+      } else {
+        setRegisterGeneralError(data.message || 'Failed to resend verification email');
+      }
+    } catch (error) {
+      setRegisterGeneralError('Network error. Please try again.');
+    }
+  };
+
+  const getModalTitle = () => {
+    switch (viewMode) {
+      case 'forgot-password':
+        return 'Forgot Password';
+      case 'reset-password':
+        return 'Reset Password';
+      case 'register':
+        return 'Create your account';
+      default:
+        return 'Welcome back';
+    }
+  };
+
+  const getModalDescription = () => {
+    switch (viewMode) {
+      case 'forgot-password':
+        return 'Enter your email to receive a password reset link';
+      case 'reset-password':
+        return 'Enter your reset code and new password';
+      case 'register':
+        return 'Sign up to start planning your next adventure';
+      default:
+        return 'Log in to access your bookings and saved activities';
+    }
+  };
+
+  // Render forgot password or reset password as single column
+  if (viewMode === 'forgot-password' || viewMode === 'reset-password') {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-md">
+        <ModalHeader
+          title={getModalTitle()}
+          description={getModalDescription()}
+          onClose={onClose}
+        />
+        <div className="mt-6">
+          {viewMode === 'forgot-password' ? (
+            <ForgotPasswordForm
+              onSubmit={handleForgotPassword}
+              isLoading={isLoading}
+              error={forgotPasswordError}
+              success={forgotPasswordSuccess}
+              email={forgotPasswordEmail}
+              onEmailChange={setForgotPasswordEmail}
+              onBackToLogin={() => setViewMode('login')}
+              onProceedToReset={() => setViewMode('reset-password')}
+            />
+          ) : (
+            <ResetPasswordForm
+              onSubmit={handleResetPassword}
+              isLoading={isLoading}
+              error={resetPasswordError}
+              success={resetPasswordSuccess}
+              token={resetToken}
+              onTokenChange={setResetToken}
+              onBackToLogin={() => setViewMode('login')}
+            />
+          )}
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-4xl">
       <ModalHeader
-        title={viewMode === 'login' ? 'Welcome back' : 'Create your account'}
-        description={
-          viewMode === 'login'
-            ? 'Log in to access your bookings and saved activities'
-            : 'Sign up to start planning your next adventure'
-        }
+        title={getModalTitle()}
+        description={getModalDescription()}
         onClose={onClose}
       />
 
@@ -253,9 +437,21 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           </div>
 
           {viewMode === 'login' ? (
-            <LoginForm onSubmit={handleLogin} isLoading={isLoading} error={loginError} />
+            <LoginForm
+              onSubmit={handleLogin}
+              isLoading={isLoading}
+              error={loginError}
+              onForgotPassword={() => setViewMode('forgot-password')}
+            />
           ) : (
-            <RegisterForm onSubmit={handleRegister} isLoading={isLoading} errors={registerErrors} generalError={registerGeneralError} />
+            <RegisterForm
+              onSubmit={handleRegister}
+              isLoading={isLoading}
+              errors={registerErrors}
+              generalError={registerGeneralError}
+              showResendVerification={showResendVerification}
+              onResendVerification={handleResendVerification}
+            />
           )}
 
           {/* Switch mode button */}

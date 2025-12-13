@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Heart, ShoppingCart, Globe, User, ChevronDown, LogIn, Bell, Sun, HelpCircle, ChevronRight, Calendar, LogOut } from 'lucide-react';
 import { useScrollSearch } from '@/hooks/useScrollSearch';
 import SearchBar from './SearchBar';
@@ -17,12 +17,15 @@ export default function HeaderClient() {
     const [scrolled, setScrolled] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<DropdownType>(null);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [loginModalMode, setLoginModalMode] = useState<'login' | 'register' | 'forgot-password' | 'reset-password'>('login');
+    const [loginModalToken, setLoginModalToken] = useState<string>('');
     const [wishlistCount, setWishlistCount] = useState(0);
     const [cartCount, setCartCount] = useState(0);
     const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { showSearchInHeader } = useScrollSearch();
     const { user, isAuthenticated, logout, refreshUser } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const handleSearch = (query: string) => {
         if (query.trim()) {
@@ -43,6 +46,26 @@ export default function HeaderClient() {
         console.log('[Header] Cart count:', count);
         setCartCount(count);
     };
+
+    // Check for query params to auto-open login modal
+    useEffect(() => {
+        const verified = searchParams.get('verified');
+        const reset = searchParams.get('reset');
+        const token = searchParams.get('token');
+
+        if (verified === 'true') {
+            setLoginModalMode('login');
+            setIsLoginModalOpen(true);
+            // Clean up URL after a short delay
+            setTimeout(() => router.replace('/'), 100);
+        } else if (reset === 'true') {
+            setLoginModalMode('reset-password');
+            setLoginModalToken(token || '');
+            setIsLoginModalOpen(true);
+            // Clean up URL after a short delay
+            setTimeout(() => router.replace('/'), 100);
+        }
+    }, [searchParams, router]);
 
     useEffect(() => {
         console.log('[Header] Component mounted, setting up listeners');
@@ -427,8 +450,12 @@ export default function HeaderClient() {
                 isOpen={isLoginModalOpen}
                 onClose={() => {
                     setIsLoginModalOpen(false);
+                    setLoginModalMode('login');
+                    setLoginModalToken('');
                     refreshUser(); // Refresh user state after login
                 }}
+                initialMode={loginModalMode}
+                initialToken={loginModalToken}
             />
         </>
     );

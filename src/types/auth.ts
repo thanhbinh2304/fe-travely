@@ -41,4 +41,6 @@ export interface ApiError {
     success: false;
     msg?: string;
     errors?: Record<string, string[]>;
+    requires_verification?: boolean;
+    email?: string;
 }

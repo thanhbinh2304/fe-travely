@@ -57,10 +57,24 @@ class authService {
         localStorage.setItem('access_token', token);
         this.setCookie('access_token', token, 7); // Lưu 7 ngày
     }
+
+    //save refresh token to localStorage
+    saveRefreshToken(refreshToken: string): void {
+        if (typeof window === 'undefined') return;
+        localStorage.setItem('refresh_token', refreshToken);
+    }
+
+    //get refresh token from localStorage
+    getRefreshToken(): string | null {
+        if (typeof window === 'undefined') return null;
+        return localStorage.getItem('refresh_token');
+    }
+
     //remove token from localStorage và cookie
     removeToken(): void {
         if (typeof window === 'undefined') return;
         localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         this.deleteCookie('access_token');
     }
@@ -120,8 +134,11 @@ class authService {
                 throw data;
             }
 
-            //save token and user
+            //save token, refresh token and user
             this.saveToken(data.data.access_token);
+            if (data.data.refresh_token) {
+                this.saveRefreshToken(data.data.refresh_token);
+            }
             this.saveUser(data.data.user);
 
             return data;
@@ -152,8 +169,11 @@ class authService {
             throw data;
         }
 
-        // Save token and user
+        // Save token, refresh token and user
         this.saveToken(data.data.access_token);
+        if (data.data.refresh_token) {
+            this.saveRefreshToken(data.data.refresh_token);
+        }
         this.saveUser(data.data.user);
 
         return data;
@@ -174,8 +194,11 @@ class authService {
             throw data;
         }
 
-        // Save token and user
+        // Save token, refresh token and user
         this.saveToken(data.data.access_token);
+        if (data.data.refresh_token) {
+            this.saveRefreshToken(data.data.refresh_token);
+        }
         this.saveUser(data.data.user);
 
         return data;
@@ -195,11 +218,81 @@ class authService {
             throw data;
         }
 
-        // Save token and user
+        // Save token, refresh token and user
         this.saveToken(data.data.access_token);
+        if (data.data.refresh_token) {
+            this.saveRefreshToken(data.data.refresh_token);
+        }
         this.saveUser(data.data.user);
 
         return data;
+    }
+
+    // Refresh access token
+    async refreshAccessToken(): Promise<boolean> {
+        const refreshToken = this.getRefreshToken();
+
+        if (!refreshToken) {
+            return false;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/refresh`, {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify({ refresh_token: refreshToken }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                this.removeToken();
+                return false;
+            }
+
+            // Save new tokens
+            this.saveToken(data.data.access_token);
+            if (data.data.refresh_token) {
+                this.saveRefreshToken(data.data.refresh_token);
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Token refresh failed:', error);
+            this.removeToken();
+            return false;
+        }
+    }
+
+    // Fetch with automatic token refresh on 401
+    async fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+        // First attempt with current token
+        const headers = this.getHeaders(true);
+        const response = await fetch(url, {
+            ...options,
+            headers: { ...headers, ...options.headers },
+        });
+
+        // If 401 Unauthorized, try to refresh token and retry
+        if (response.status === 401) {
+            const refreshed = await this.refreshAccessToken();
+
+            if (refreshed) {
+                // Retry request with new token
+                const newHeaders = this.getHeaders(true);
+                return fetch(url, {
+                    ...options,
+                    headers: { ...newHeaders, ...options.headers },
+                });
+            } else {
+                // Refresh failed, redirect to login
+                if (typeof window !== 'undefined') {
+                    window.location.href = '/auth/login';
+                }
+            }
+        }
+
+        return response;
     }
 
     // Logout
@@ -216,9 +309,8 @@ class authService {
 
     // Get Profile
     async getProfile(): Promise<User> {
-        const response = await fetch(`${API_URL}/profile`, {
+        const response = await this.fetchWithAuth(`${API_URL}/profile`, {
             method: 'GET',
-            headers: this.getHeaders(true),
         });
 
         const data = await response.json();

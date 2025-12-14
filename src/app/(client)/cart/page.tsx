@@ -8,7 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { cartService, CartItem } from '@/app/services/cartService';
 import { LoginModal } from '@/components/client/login';
-import authService from '@/app/services/authService';
+import authService from '@/app/services/AuthService';
 
 export default function CartPage() {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);

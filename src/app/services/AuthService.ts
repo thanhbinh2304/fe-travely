@@ -169,12 +169,22 @@ class authService {
             throw data;
         }
 
-        // Save token, refresh token and user
-        this.saveToken(data.data.access_token);
-        if (data.data.refresh_token) {
+        // Nếu BE yêu cầu verify email thì BE sẽ không trả access_token
+        if (data?.data?.requires_verification) {
+        // Không lưu token, chỉ trả data để UI hiện thông báo “check email”
+            return data;
+        }
+
+        // Chỉ lưu token khi thật sự có access_token
+        if (data?.data?.access_token) {
+            this.saveToken(data.data.access_token);
+        }
+        if (data?.data?.refresh_token) {
             this.saveRefreshToken(data.data.refresh_token);
         }
-        this.saveUser(data.data.user);
+        if (data?.data?.user) {
+            this.saveUser(data.data.user);
+        }
 
         return data;
     }

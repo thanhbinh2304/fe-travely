@@ -110,7 +110,7 @@ export default function UsersPage() {
 
         return (
             <>
-                <SiteHeader title="Users Management" />
+                <SiteHeader title="Quản lý người dùng" />
                 <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                     <div className="rounded-lg border bg-card p-6">
                         <p>Đang tải...</p>
@@ -122,7 +122,7 @@ export default function UsersPage() {
 
     return (
         <>
-            <SiteHeader title="Users Management" />
+            <SiteHeader title="Quản lý người dùng" />
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 <div className="rounded-lg border bg-card p-6">
                     <GenericDataTable

@@ -20,12 +20,16 @@ export default function BookingsPage() {
         try {
             setIsLoading(true)
             const response = await bookingService.adminGetAllBookings()
-            // Response có thể có pagination, lấy data.data nếu có
-            const bookingsData = response.data?.data || response.data || []
-            setBookings(Array.isArray(bookingsData) ? bookingsData : [])
+            const rawData = response.data as Booking[] | { data?: Booking[] }
+            const bookingsData: Booking[] = Array.isArray(rawData)
+                ? rawData
+                : Array.isArray(rawData.data)
+                    ? rawData.data
+                    : []
+            setBookings(bookingsData)
         } catch (error) {
             console.error('Error fetching bookings:', error)
-            toast.error('Không thể tải danh sách booking')
+            toast.error('Kh“ng th? t?i danh s ch booking')
         } finally {
             setIsLoading(false)
         }
@@ -34,19 +38,19 @@ export default function BookingsPage() {
     const handleDelete = async (bookingID: number) => {
         try {
             await bookingService.adminDeleteBooking(bookingID)
-            toast.success('Đã xóa booking thành công')
+            toast.success('Da x¢a booking th…nh c“ng')
             // Refresh list
             fetchBookings()
         } catch (error: any) {
             console.error('Error deleting booking:', error)
-            toast.error(error.message || 'Không thể xóa booking')
+            toast.error(error.message || 'Kh“ng th? x¢a booking')
         }
     }
 
     if (isLoading) {
         return (
             <>
-                <SiteHeader title="Bookings Management" />
+                <SiteHeader title="Đặt tour du lịch" />
                 <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                     <div className="rounded-lg border bg-card p-6">
                         <div className="flex items-center justify-center h-64">
@@ -60,16 +64,16 @@ export default function BookingsPage() {
 
     return (
         <>
-            <SiteHeader title="Bookings Management" />
+            <SiteHeader title="Đặt tour du lịch" />
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 <div className="rounded-lg border bg-card p-6">
                     <GenericDataTable
                         columns={createBookingColumns(handleDelete)}
                         data={bookings}
                         searchKey="user.userName"
-                        searchPlaceholder="Tìm kiếm theo tên khách hàng..."
+                        searchPlaceholder="Tm ki?m theo tˆn kh ch h…ng..."
                         addNewUrl="/dashboard/bookings/create"
-                        addNewLabel="Thêm booking mới"
+                        addNewLabel="Thˆm booking m?i"
                     />
                 </div>
             </div>

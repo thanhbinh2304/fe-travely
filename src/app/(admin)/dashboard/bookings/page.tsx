@@ -23,7 +23,7 @@ export default function BookingsPage() {
     const fetchBookings = async () => {
         try {
             setIsLoading(true)
-            const response = await bookingService.adminGetAllBookings()
+            const response = await bookingService.adminGetAllBookings({ per_page: 1000 })
             const rawData = response.data as Booking[] | { data?: Booking[] }
             const bookingsData: Booking[] = Array.isArray(rawData)
                 ? rawData
@@ -33,7 +33,7 @@ export default function BookingsPage() {
             setBookings(bookingsData)
         } catch (error) {
             console.error('Error fetching bookings:', error)
-            toast.error('Kh“ng th? t?i danh s ch booking')
+            toast.error('Không thể tải danh sách booking')
         } finally {
             setIsLoading(false)
         }
@@ -82,9 +82,9 @@ export default function BookingsPage() {
                         columns={createBookingColumns(handleDelete)}
                         data={bookings}
                         searchKey="user.userName"
-                        searchPlaceholder="Tm ki?m theo tˆn kh ch h…ng..."
+                        searchPlaceholder="Tìm kiếm theo tên khách hàng..."
                         addNewUrl="/dashboard/bookings/create"
-                        addNewLabel="Thˆm booking m?i"
+                        addNewLabel="Thêm booking mới"
                         onSelectedRowsChange={setSelectedRows}
                         selectedCount={selectedRows.length}
                         onDeleteSelected={handleDeleteSelected}

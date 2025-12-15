@@ -20,7 +20,7 @@ export default function PromotionsPage() {
     const fetchPromotions = async () => {
         try {
             setIsLoading(true)
-            const response = await promotionService.getPromotions()
+            const response = await promotionService.getPromotions({ per_page: 1000 })
             setPromotions(response.data || [])
         } catch (error) {
             console.error('Error fetching promotions:', error)

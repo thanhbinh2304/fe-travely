@@ -105,7 +105,10 @@ export default function RevenueReportPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-4xl font-bold text-green-600">
-                            {formatCurrency(revenueStats?.total_revenue || 0)}
+                            {formatCurrency(
+                                (revenueStats?.revenue_by_period || [])
+                                    .reduce((sum: number, item: any) => sum + Number(item.revenue || 0), 0)
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -179,9 +182,9 @@ export default function RevenueReportPage() {
                                         <Line
                                             type="monotone"
                                             dataKey="revenue"
-                                            stroke="hsl(var(--chart-1))"
+                                            stroke="#3b82f6" // xanh
                                             strokeWidth={2}
-                                            dot={{ r: 4 }}
+                                            dot={{ r: 4, stroke: "#3b82f6", fill: "#3b82f6" }}
                                             activeDot={{ r: 6 }}
                                         />
                                     </LineChart>

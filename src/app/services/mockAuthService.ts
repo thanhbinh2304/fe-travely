@@ -143,13 +143,13 @@ class MockAuthService {
 
     // Mock register
     async register(registerData: RegisterData): Promise<AuthResponse> {
-        console.log('[MOCK MODE] Register attempt:', registerData.name);
+        console.log('[MOCK MODE] Register attempt:', registerData.userName);
 
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Check if username or email already exists
         const existingUser = MOCK_USERS.find(u =>
-            u.userName === registerData.name || u.email === registerData.email
+            u.userName === registerData.userName || u.email === registerData.email
         );
 
         if (existingUser) {
@@ -162,7 +162,7 @@ class MockAuthService {
         // Create new mock user
         const newUser: User = {
             userID: String(MOCK_USERS.length + 1),
-            userName: registerData.name,
+            userName: registerData.userName,
             email: registerData.email,
             role_id: 2, // Normal user
         };

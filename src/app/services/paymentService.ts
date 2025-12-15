@@ -85,36 +85,38 @@ class PaymentService {
     }
 
     // Get all payments for admin dashboard
-    async adminGetAllPayments(params?: {
-        payment_method?: string;
-        payment_status?: string;
-        from_date?: string;
-        to_date?: string;
-        search?: string;
-        per_page?: number;
-        page?: number;
-    }): Promise<ApiResponse<Payment[]>> {
+    async adminGetAllPayments(
+        params?: {
+            payment_method?: string;
+            payment_status?: string;
+            from_date?: string;
+            to_date?: string;
+            search?: string;
+            per_page?: number;
+            page?: number;
+        }
+        ): Promise<ApiResponse<{ data: Payment[] }>> {
         const queryParams = new URLSearchParams();
 
-        if (params?.payment_method) queryParams.append('payment_method', params.payment_method);
-        if (params?.payment_status) queryParams.append('payment_status', params.payment_status);
-        if (params?.from_date) queryParams.append('from_date', params.from_date);
-        if (params?.to_date) queryParams.append('to_date', params.to_date);
-        if (params?.search) queryParams.append('search', params.search);
-        if (params?.per_page) queryParams.append('per_page', params.per_page.toString());
-        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.payment_method) queryParams.append("payment_method", params.payment_method);
+        if (params?.payment_status) queryParams.append("payment_status", params.payment_status);
+        if (params?.from_date) queryParams.append("from_date", params.from_date);
+        if (params?.to_date) queryParams.append("to_date", params.to_date);
+        if (params?.search) queryParams.append("search", params.search);
+        if (params?.per_page) queryParams.append("per_page", params.per_page.toString());
+        if (params?.page) queryParams.append("page", params.page.toString());
 
         const response = await fetch(`${API_URL}/admin/payments?${queryParams.toString()}`, {
-            method: 'GET',
+            method: "GET",
             headers: this.getHeaders(true),
         });
 
         const data = await response.json();
-        if (!response.ok) {
-            throw data;
+        if (!response.ok) throw data;
+        return data; // => { success, data: { data: [...] } }
         }
-        return data;
-    }
+
+
 
     // Create a new payment
     async store(paymentData: CreatePaymentData): Promise<ApiResponse<Payment>> {
@@ -510,10 +512,12 @@ class PaymentService {
             headers: this.getHeaders(true),
         });
 
-        const data = await response.json();
+        const data: ApiResponse<null> = await response.json();
+
         if (!response.ok) {
             throw data;
         }
+
         return data;
     }
 }

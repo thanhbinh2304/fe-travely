@@ -177,26 +177,26 @@ class StatisticService {
     }
 
     // 1) Booking status: pending / confirmed / cancelled
-        async getBookingStatusStats(params?: { start_date?: string; end_date?: string }) {
-            const query = new URLSearchParams();
-            if (params?.start_date) query.set('start_date', params.start_date);
-            if (params?.end_date) query.set('end_date', params.end_date);
+    async getBookingStatusStats(params?: { start_date?: string; end_date?: string }) {
+        const query = new URLSearchParams();
+        if (params?.start_date) query.set('start_date', params.start_date);
+        if (params?.end_date) query.set('end_date', params.end_date);
 
         const response = await fetch(
             `${API_URL}/admin/statistics/bookings/status${query.toString() ? `?${query.toString()}` : ''}`,
             {
-            method: 'GET',
-            headers: this.getHeaders(true),
+                method: 'GET',
+                headers: this.getHeaders(true),
             }
         );
 
         const data = await response.json();
         if (!response.ok) throw data;
         return data;
-        }
+    }
 
-        // 2) New users stats
-        async getNewUsersStats(params?: { start_date?: string; end_date?: string }) {
+    // 2) New users stats
+    async getNewUsersStats(params?: { start_date?: string; end_date?: string }) {
         const query = new URLSearchParams();
         if (params?.start_date) query.set('start_date', params.start_date);
         if (params?.end_date) query.set('end_date', params.end_date);
@@ -204,8 +204,8 @@ class StatisticService {
         const response = await fetch(
             `${API_URL}/admin/statistics/users/new${query.toString() ? `?${query.toString()}` : ''}`,
             {
-            method: 'GET',
-            headers: this.getHeaders(true),
+                method: 'GET',
+                headers: this.getHeaders(true),
             }
         );
 
@@ -213,18 +213,77 @@ class StatisticService {
         if (!response.ok) throw data;
         return data;
     }
-    
+
     // New users statistics
     async getNewUsers(params: { period: "day" | "week" | "month" | "year" | "all" }) {
-    const response = await fetch(`${API_URL}/admin/statistics/new-users?period=${params.period}`, {
-        method: "GET",
-        headers: this.getHeaders(true),
-    });
+        const response = await fetch(`${API_URL}/admin/statistics/new-users?period=${params.period}`, {
+            method: "GET",
+            headers: this.getHeaders(true),
+        });
 
-    const data = await response.json();
-    if (!response.ok) throw data;
-    return data;
+        const data = await response.json();
+        if (!response.ok) throw data;
+        return data;
     }
+
+    // Export report CSV functions
+    exportBookingStats(params?: {
+        start_date?: string;
+        end_date?: string;
+    }): string {
+        const queryParams = new URLSearchParams();
+        if (params?.start_date) queryParams.append('start_date', params.start_date);
+        if (params?.end_date) queryParams.append('end_date', params.end_date);
+        const token = this.getToken();
+        queryParams.append('token', token || '');
+
+        return `${API_URL}/admin/statistics/export/booking-stats?${queryParams.toString()}`;
+    }
+
+    exportTopTours(params?: {
+        limit?: number;
+        period?: 'week' | 'month' | 'year' | 'all';
+    }): string {
+        const queryParams = new URLSearchParams();
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.period) queryParams.append('period', params.period);
+        const token = this.getToken();
+        queryParams.append('token', token || '');
+
+        return `${API_URL}/admin/statistics/export/top-tours?${queryParams.toString()}`;
+    }
+
+    exportRevenue(params?: {
+        period?: 'day' | 'week' | 'month' | 'year';
+        start_date?: string;
+        end_date?: string;
+    }): string {
+        const queryParams = new URLSearchParams();
+        if (params?.period) queryParams.append('period', params.period);
+        if (params?.start_date) queryParams.append('start_date', params.start_date);
+        if (params?.end_date) queryParams.append('end_date', params.end_date);
+        const token = this.getToken();
+        queryParams.append('token', token || '');
+
+        return `${API_URL}/admin/statistics/export/revenue?${queryParams.toString()}`;
+    }
+
+    exportUserGrowth(params?: {
+        period?: 'day' | 'week' | 'month' | 'year' | 'all';
+        start_date?: string;
+        end_date?: string;
+    }): string {
+        const queryParams = new URLSearchParams();
+        if (params?.period) queryParams.append('period', params.period);
+        if (params?.start_date) queryParams.append('start_date', params.start_date);
+        if (params?.end_date) queryParams.append('end_date', params.end_date);
+        const token = this.getToken();
+        queryParams.append('token', token || '');
+
+        return `${API_URL}/admin/statistics/export/user-growth?${queryParams.toString()}`;
+    }
+
 }
+
 
 export const statisticService = new StatisticService();

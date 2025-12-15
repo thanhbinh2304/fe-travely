@@ -5,12 +5,16 @@ import { SiteHeader } from "@/components/site-header"
 import { GenericDataTable } from "@/components/admin/GenericDataTable"
 import { createBookingColumns } from "./columns"
 import { bookingService } from "@/app/services/bookingService"
+import { useBulkDelete } from "@/hooks/useBulkDelete"
 import { Booking } from "@/types/booking"
 import { toast } from "sonner"
+import { id } from "zod/v4/locales"
 
 export default function BookingsPage() {
     const [bookings, setBookings] = useState<Booking[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [selectedRows, setSelectedRows] = useState<Booking[]>([])
+    const { deleteItems, isDeleting } = useBulkDelete<Booking>()
 
     useEffect(() => {
         fetchBookings()
@@ -35,16 +39,19 @@ export default function BookingsPage() {
         }
     }
 
-    const handleDelete = async (bookingID: number) => {
-        try {
-            await bookingService.adminDeleteBooking(bookingID)
-            toast.success('Da x¢a booking th…nh c“ng')
-            // Refresh list
-            fetchBookings()
-        } catch (error: any) {
-            console.error('Error deleting booking:', error)
-            toast.error(error.message || 'Kh“ng th? x¢a booking')
-        }
+    const handleDeleteSelected = () => {
+        deleteItems({
+            items: selectedRows,
+            deleteFunction: (id) => bookingService.adminDeleteBooking(Number(id)),
+            getItemId: (booking) => String(booking.bookingID),
+            onSuccess: (deletedIds) => {
+                setBookings(prevBookings =>
+                    prevBookings.filter(booking => !deletedIds.includes(String(booking.bookingID)))
+                )
+                setSelectedRows([])
+            },
+            itemName: 'booking'
+        })
     }
 
     if (isLoading) {
@@ -62,6 +69,10 @@ export default function BookingsPage() {
         )
     }
 
+    function handleDelete(id: number): void {
+        throw new Error("Function not implemented.")
+    }
+
     return (
         <>
             <SiteHeader title="Đặt tour du lịch" />
@@ -74,6 +85,9 @@ export default function BookingsPage() {
                         searchPlaceholder="Tm ki?m theo tˆn kh ch h…ng..."
                         addNewUrl="/dashboard/bookings/create"
                         addNewLabel="Thˆm booking m?i"
+                        onSelectedRowsChange={setSelectedRows}
+                        selectedCount={selectedRows.length}
+                        onDeleteSelected={handleDeleteSelected}
                     />
                 </div>
             </div>

@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-interface DeleteConfig<T> {
+interface DeleteConfig<T, ID = string|number, R = any> {
     items: T[]
     onSuccess: (deletedIds: string[]) => void
-    deleteFunction: (id: string) => Promise<void>
+    deleteFunction: (id:ID) => Promise<R>
     getItemId: (item: T) => string
     confirmMessage?: (count: number) => string
     successMessage?: (count: number) => string
@@ -12,7 +12,7 @@ interface DeleteConfig<T> {
     itemName?: string
 }
 
-export function useBulkDelete<T>() {
+export function useBulkDelete<T, ID = string|number, R = any>() {
     const [isDeleting, setIsDeleting] = useState(false)
 
     const deleteItems = async (config: DeleteConfig<T>) => {

@@ -124,18 +124,20 @@ export const bookingColumns: ColumnDef<Booking>[] = [
     //     ),
     // },
     {
-        accessorKey: "user.userName",
-        header: "Khách hàng",
-        cell: ({ row }) => {
-            const booking = row.original
-            return (
-                <div>
-                    <div className="font-medium">{booking.user?.userName || 'N/A'}</div>
-                    <div className="text-sm text-muted-foreground">{booking.user?.email || ''}</div>
-                </div>
-            )
-        },
+    id: "userName",
+    header: "Khách hàng",
+    accessorFn: (row) => row.user?.userName ?? "", // 👈 nếu backend trả "name"
+    cell: ({ row }) => {
+        const booking = row.original
+        return (
+            <div>
+                <div className="font-medium">{booking.user?.userName || "N/A"}</div>
+                <div className="text-sm text-muted-foreground">{booking.user?.email || ""}</div>
+            </div>
+        )
     },
+    },
+
     {
         accessorKey: "tour.title",
         header: "Tour",
@@ -187,8 +189,11 @@ export const bookingColumns: ColumnDef<Booking>[] = [
                 pending: { label: "Chờ thanh toán", class: "bg-yellow-100 text-yellow-800 border-yellow-300" },
                 failed: { label: "Thất bại", class: "bg-red-100 text-red-800 border-red-300" },
             }
-            const statusInfo = statusMap[status as keyof typeof statusMap]
-            return <Badge className={statusInfo.class}>{statusInfo.label}</Badge>
+            const statusInfo = statusMap[status as keyof typeof statusMap] ?? {
+                label: "Không xác định",
+                class: "bg-gray-100 text-gray-800 border-gray-300",
+            };
+            return <Badge className={statusInfo.class}>{statusInfo.label}</Badge>;
         },
     },
     {
@@ -201,8 +206,11 @@ export const bookingColumns: ColumnDef<Booking>[] = [
                 cancelled: { label: "Đã hủy", class: "bg-gray-100 text-gray-800 border-gray-300" },
                 completed: { label: "Hoàn thành", class: "bg-green-100 text-green-800 border-green-300" },
             }
-            const statusInfo = statusMap[status as keyof typeof statusMap]
-            return <Badge className={statusInfo.class}>{statusInfo.label}</Badge>
+            const statusInfo = statusMap[status as keyof typeof statusMap] ?? {
+                label: "Không xác định",
+                class: "bg-gray-100 text-gray-800 border-gray-300",
+            };
+            return <Badge className={statusInfo.class}>{statusInfo.label}</Badge>;
         },
     },
     {

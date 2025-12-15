@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { statisticService } from "@/app/services/statisticService"
 import { toast } from "sonner"
 import { IconAlertTriangle, IconPercentage, IconX, IconTrendingUp } from "@tabler/icons-react"
+import ExportReportButton from "@/components/admin/ExportReportButton"
 import { Progress } from "@/components/ui/progress"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts"
@@ -70,6 +71,7 @@ export default function CancellationRatePage() {
                         </h1>
                         <p className="text-muted-foreground mt-1">Phân tích tình trạng hủy booking</p>
                     </div>
+                    <ExportReportButton/>
                 </div>
 
                 {/* Main Cancellation Rate Card */}
@@ -201,7 +203,9 @@ export default function CancellationRatePage() {
                                         cx="50%"
                                         cy="50%"
                                         labelLine={false}
-                                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                        label={({ name, value, percent }) =>
+                                            value > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ""
+                                        }
                                         outerRadius={100}
                                         fill="#8884d8"
                                         dataKey="value"

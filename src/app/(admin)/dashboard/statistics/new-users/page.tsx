@@ -8,7 +8,8 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
-import { IconUserPlus } from "@tabler/icons-react"
+import { IconUserPlus, IconDownload } from "@tabler/icons-react"
+import ExportReportButton from "@/components/admin/ExportReportButton"
 
 export default function NewUsersPage() {
   const [period, setPeriod] = useState<"week" | "month" | "year" | "all">("month")
@@ -75,6 +76,7 @@ export default function NewUsersPage() {
             <Button variant={period === "all" ? "default" : "outline"} size="sm" onClick={() => setPeriod("all")}>
               Tất cả
             </Button>
+            <ExportReportButton period={period} endpoint="user-growth" />
           </div>
         </div>
 

@@ -5,12 +5,15 @@ import { SiteHeader } from "@/components/site-header"
 import { GenericDataTable } from "@/components/admin/GenericDataTable"
 import { createTourColumns } from "./columns"
 import { tourService } from "@/app/services/tourService"
+import { useBulkDelete } from "@/hooks/useBulkDelete"
 import { Tour } from "@/types/tour"
 import { toast } from "sonner"
 
 export default function ToursPage() {
     const [tours, setTours] = useState<Tour[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [selectedRows, setSelectedRows] = useState<Tour[]>([])
+    const { deleteItems, isDeleting } = useBulkDelete<Tour>()
 
     useEffect(() => {
         fetchTours()
@@ -19,7 +22,7 @@ export default function ToursPage() {
     const fetchTours = async () => {
         try {
             setIsLoading(true)
-            const data = await tourService.getAllTours()
+            const data = await tourService.getAllTours({ per_page: 1000 })
             setTours(data)
         } catch (error) {
             console.error('Error fetching tours:', error)
@@ -29,8 +32,19 @@ export default function ToursPage() {
         }
     }
 
-    const handleRefresh = () => {
-        fetchTours()
+    const handleDeleteSelected = () => {
+        deleteItems({
+            items: selectedRows,
+            deleteFunction: (id) => tourService.deleteTour(id.toString()),
+            getItemId: (tour) => tour.tourID,
+            onSuccess: (deletedIds) => {
+                setTours(prevTours =>
+                    prevTours.filter(tour => !deletedIds.includes(tour.tourID))
+                )
+                setSelectedRows([])
+            },
+            itemName: 'tour'
+        })
     }
 
     if (isLoading) {
@@ -48,6 +62,10 @@ export default function ToursPage() {
         )
     }
 
+    function handleRefresh(): void {
+        throw new Error("Function not implemented.")
+    }
+
     return (
         <>
             <SiteHeader title="Quản lý tour du lịch" />
@@ -60,6 +78,9 @@ export default function ToursPage() {
                         searchPlaceholder="Tìm kiếm theo tên tour..."
                         addNewUrl="/dashboard/tours/create"
                         addNewLabel="Thêm tour mới"
+                        onSelectedRowsChange={setSelectedRows}
+                        selectedCount={selectedRows.length}
+                        onDeleteSelected={handleDeleteSelected}
                     />
                 </div>
             </div>

@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { statisticService } from "@/app/services/statisticService"
 import { toast } from "sonner"
-import { IconChecklist, IconClock, IconCircleCheck, IconCircleX, IconChartPie } from "@tabler/icons-react"
+import { IconChecklist, IconClock, IconCircleCheck, IconCircleX, IconChartPie, IconDownload } from "@tabler/icons-react"
 import { Progress } from "@/components/ui/progress"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts"
+import ExportReportButton from "@/components/admin/ExportReportButton"
 
 export default function BookingStatusPage() {
   const [bookingStats, setBookingStats] = useState<any>(null)
@@ -68,6 +70,8 @@ export default function BookingStatusPage() {
             </h1>
             <p className="text-muted-foreground mt-1">Thống kê số lượng booking theo từng trạng thái</p>
           </div>
+
+          <ExportReportButton endpoint="booking-stats" />
         </div>
 
         {/* Tổng booking */}
@@ -182,7 +186,9 @@ export default function BookingStatusPage() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, value, percent }) =>
+                      value > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ""
+                    }
                     outerRadius={100}
                     dataKey="value"
                   >

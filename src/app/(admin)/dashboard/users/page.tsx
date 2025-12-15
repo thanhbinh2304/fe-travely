@@ -27,7 +27,7 @@ export default function UsersPage() {
     const handleDeleteSelected = () => {
         deleteItems({
             items: selectedRows,
-            deleteFunction: (id) => userService.deleteUser(id),
+            deleteFunction: (id) => userService.deleteUser(String(id)),
             getItemId: (user) => user.userID,
             onSuccess: (deletedIds) => {
                 setUsersData(prevUsers =>
@@ -45,7 +45,7 @@ export default function UsersPage() {
 
         deleteItems({
             items: [userToDelete],
-            deleteFunction: (id) => userService.deleteUser(id),
+            deleteFunction: (id) => userService.deleteUser(String(id)),
             getItemId: (user) => user.userID,
             onSuccess: (deletedIds) => {
                 setUsersData(prevUsers =>

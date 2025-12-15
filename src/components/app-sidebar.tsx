@@ -11,6 +11,7 @@ import {
   IconReceipt,
   IconSearch,
   IconSettings,
+  IconTag,
   IconUsers,
 } from "@tabler/icons-react"
 
@@ -44,6 +45,11 @@ const data = {
       title: "Tour du lịch",
       url: "/dashboard/tours",
       icon: IconMapPin,
+    },
+    {
+      title: "Khuyến mãi",
+      url: "/dashboard/promotions",
+      icon: IconTag,
     },
     {
       title: "Đặt tour",

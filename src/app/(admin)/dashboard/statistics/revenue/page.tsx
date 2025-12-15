@@ -5,10 +5,11 @@ import { SiteHeader } from "@/components/site-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { statisticService } from "@/app/services/statisticService"
 import { toast } from "sonner"
-import { IconCurrencyDong, IconTrendingUp, IconTrendingDown, IconCalendar } from "@tabler/icons-react"
+import { IconCurrencyDong, IconTrendingUp, IconTrendingDown, IconCalendar, IconDownload } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, ResponsiveContainer } from "recharts"
+import ExportReportButton from "@/components/admin/ExportReportButton"
 
 export default function RevenueReportPage() {
     const [revenueStats, setRevenueStats] = useState<any>(null)
@@ -89,6 +90,7 @@ export default function RevenueReportPage() {
                         >
                             Năm
                         </Button>
+                        <ExportReportButton period={period} endpoint="revenue" />
                     </div>
                 </div>
 

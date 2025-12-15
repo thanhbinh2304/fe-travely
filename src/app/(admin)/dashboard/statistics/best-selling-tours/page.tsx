@@ -5,11 +5,12 @@ import { SiteHeader } from "@/components/site-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { statisticService } from "@/app/services/statisticService"
 import { toast } from "sonner"
-import { IconTrophy, IconStar, IconUsers, IconCurrencyDong } from "@tabler/icons-react"
+import { IconTrophy, IconStar, IconUsers, IconCurrencyDong, IconDownload } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts"
+import ExportReportButton from "@/components/admin/ExportReportButton"
 
 export default function BestSellingToursPage() {
     const [topTours, setTopTours] = useState<any[]>([])
@@ -105,6 +106,7 @@ export default function BestSellingToursPage() {
                         >
                             Tất cả
                         </Button>
+                        <ExportReportButton  period={period} />
                     </div>
                 </div>
 

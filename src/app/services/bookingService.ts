@@ -165,11 +165,13 @@ class BookingService {
             headers: this.getHeaders(true),
         });
 
-        const data = await response.json();
-        if (!response.ok) {
-            throw data;
-        }
-        return data;
+        const json = await response.json();
+
+            if (!response.ok) {
+                throw json;
+            }
+
+            return json;
     }
 
     // Confirm booking (Admin)

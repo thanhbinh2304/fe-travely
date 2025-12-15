@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar, Users, CreditCard, Building2, ChevronLeft, Loader2 } from 'lucide-react';
 import { cartService, CartItem } from '@/app/services/cartService';
-import authService from '@/app/services/authService';
+import authService from '@/app/services/AuthService';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import Link from 'next/link';

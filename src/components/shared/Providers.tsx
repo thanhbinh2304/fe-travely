@@ -10,7 +10,16 @@ interface ProvidersProps {
 }
 
 export default function Providers({ children }: ProvidersProps) {
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+  if (!googleClientId) {
+    return (
+      <>
+        <FacebookSDK />
+        {children}
+      </>
+    );
+  }
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>

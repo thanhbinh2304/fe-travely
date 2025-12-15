@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import HeaderClient from "@/components/client/header";
 import FooterClient from "@/components/client/footer";
 import { cartService } from '@/app/services/cartService';
-import authService from '@/app/services/authService';
+import authService from '@/app/services/AuthService';
 export default function ClientLayout({
     children,
 }: Readonly<{

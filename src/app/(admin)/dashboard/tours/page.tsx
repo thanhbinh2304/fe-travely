@@ -36,7 +36,7 @@ export default function ToursPage() {
     if (isLoading) {
         return (
             <>
-                <SiteHeader title="Tours Management" />
+                <SiteHeader title="Quản lý tour du lịch" />
                 <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                     <div className="rounded-lg border bg-card p-6">
                         <div className="flex items-center justify-center h-64">
@@ -50,7 +50,7 @@ export default function ToursPage() {
 
     return (
         <>
-            <SiteHeader title="Tours Management" />
+            <SiteHeader title="Quản lý tour du lịch" />
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 <div className="rounded-lg border bg-card p-6">
                     <GenericDataTable

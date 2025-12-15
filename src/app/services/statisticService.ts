@@ -175,6 +175,56 @@ class StatisticService {
         }
         return data;
     }
+
+    // 1) Booking status: pending / confirmed / cancelled
+        async getBookingStatusStats(params?: { start_date?: string; end_date?: string }) {
+            const query = new URLSearchParams();
+            if (params?.start_date) query.set('start_date', params.start_date);
+            if (params?.end_date) query.set('end_date', params.end_date);
+
+        const response = await fetch(
+            `${API_URL}/admin/statistics/bookings/status${query.toString() ? `?${query.toString()}` : ''}`,
+            {
+            method: 'GET',
+            headers: this.getHeaders(true),
+            }
+        );
+
+        const data = await response.json();
+        if (!response.ok) throw data;
+        return data;
+        }
+
+        // 2) New users stats
+        async getNewUsersStats(params?: { start_date?: string; end_date?: string }) {
+        const query = new URLSearchParams();
+        if (params?.start_date) query.set('start_date', params.start_date);
+        if (params?.end_date) query.set('end_date', params.end_date);
+
+        const response = await fetch(
+            `${API_URL}/admin/statistics/users/new${query.toString() ? `?${query.toString()}` : ''}`,
+            {
+            method: 'GET',
+            headers: this.getHeaders(true),
+            }
+        );
+
+        const data = await response.json();
+        if (!response.ok) throw data;
+        return data;
+    }
+    
+    // New users statistics
+    async getNewUsers(params: { period: "day" | "week" | "month" | "year" | "all" }) {
+    const response = await fetch(`${API_URL}/admin/statistics/new-users?period=${params.period}`, {
+        method: "GET",
+        headers: this.getHeaders(true),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw data;
+    return data;
+    }
 }
 
 export const statisticService = new StatisticService();

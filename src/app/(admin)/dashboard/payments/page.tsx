@@ -46,7 +46,7 @@ export default function PaymentsPage() {
     if (isLoading) {
         return (
             <>
-                <SiteHeader title="Payments Management" />
+                <SiteHeader title="Quản lý thanh toán" />
                 <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                     <div className="rounded-lg border bg-card p-6">
                         <div className="flex items-center justify-center h-64">
@@ -60,7 +60,7 @@ export default function PaymentsPage() {
 
     return (
         <>
-            <SiteHeader title="Payments Management" />
+            <SiteHeader title="Quản lý thanh toán" />
             <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
                 <div className="rounded-lg border bg-card p-6">
                     <GenericDataTable

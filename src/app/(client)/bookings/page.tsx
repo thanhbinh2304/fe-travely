@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import authService from '@/app/services/authService';
+import authService from '@/app/services/AuthService';
 import { toast } from 'sonner';
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api';

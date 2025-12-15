@@ -29,7 +29,7 @@ export default function Banner() {
             {/* Content */}
             <div className="relative z-10 container mx-auto px-4 text-center" ref={searchRef}>
                 <h1 className="text-5xl md:text-6xl font-bold text-white mb-8 drop-shadow-lg">
-                    Discover & book things to do
+                    Tìm kiếm địa điểm và trải nghiệm
                 </h1>
 
                 {/* Search Bar */}
@@ -39,7 +39,7 @@ export default function Banner() {
 
                 {/* Continue Planning Section */}
                 <div className="mt-12">
-                    <h2 className="text-2xl text-white font-semibold mb-6">Continue planning your trip</h2>
+                    <h2 className="text-2xl text-white font-semibold mb-6">Tiếp tục lên kế hoạch cho chuyến đi của bạn</h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
 

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User, Mail, CreditCard, Bell, Loader2 } from 'lucide-react';
-import authService from '@/app/services/authService';
+import authService from '@/app/services/AuthService';
 import { toast } from 'sonner';
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api';

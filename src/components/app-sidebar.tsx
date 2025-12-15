@@ -31,32 +31,32 @@ import {
 const data = {
   navMain: [
     {
-      title: "Dashboard",
+      title: "Bảng điều khiển",
       url: "/dashboard",
       icon: IconDashboard,
     },
     {
-      title: "User",
+      title: "Người dùng",
       url: "/dashboard/users",
       icon: IconUsers,
     },
     {
-      title: "Tour",
+      title: "Tour du lịch",
       url: "/dashboard/tours",
       icon: IconMapPin,
     },
     {
-      title: "Booking",
+      title: "Đặt tour",
       url: "/dashboard/bookings",
       icon: IconReceipt,
     },
     {
-      title: "Payment",
+      title: "Thanh toán",
       url: "/dashboard/payments",
       icon: IconCreditCard,
     },
     {
-      title: "Statistic",
+      title: "Thống kê",
       url: "/dashboard/statistics",
       icon: IconChartBar,
       items: [
@@ -76,22 +76,30 @@ const data = {
           title: "Báo cáo tỷ lệ hủy bookings",
           url: "/dashboard/statistics/cancellation-rate",
         },
+        {
+          title: "Báo cáo trạng thái booking",
+          url: "/dashboard/statistics/booking-status",
+        },
+        {
+          title: "Báo cáo người dùng mới",
+          url: "/dashboard/statistics/new-users",
+        },
       ],
     },
   ],
   navSecondary: [
     {
-      title: "Settings",
+      title: "Cài đặt",
       url: "/dashboard/settings",
       icon: IconSettings,
     },
     {
-      title: "Get Help",
+      title: "Trợ giúp",
       url: "/dashboard/help",
       icon: IconHelp,
     },
     {
-      title: "Search",
+      title: "Tìm kiếm",
       url: "/dashboard/search",
       icon: IconSearch,
     },

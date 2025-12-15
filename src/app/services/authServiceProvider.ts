@@ -1,4 +1,4 @@
-import realAuthService from './authService';
+import realAuthService from './AuthService';
 import mockAuthService from './mockAuthService';
 
 // Cấu hình: đặt USE_MOCK_AUTH = true để dùng mock mode (không cần backend)

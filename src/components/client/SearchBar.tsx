@@ -25,7 +25,7 @@ export default function SearchBar({ className = '', onSearch }: SearchBarProps) 
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Find places and things to do"
+                    placeholder="Tìm kiếm địa điểm và trải nghiệm"
                     className="w-full px-6 py-4 rounded-full bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-lg"
                 />
                  <button

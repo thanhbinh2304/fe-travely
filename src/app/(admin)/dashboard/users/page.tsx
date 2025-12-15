@@ -63,7 +63,7 @@ export default function UsersPage() {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const users = await userService.getAllUsers()
+                const users = await userService.getAllUsers({ per_page: 1000 })
 
                 // Transform User[] to UserManagement[]
                 const transformed: UserManagement[] = users.map(user => {
@@ -92,6 +92,7 @@ export default function UsersPage() {
                         createdAt: user.created_at || new Date().toISOString(),
                         lastLogin: user.last_login,
                         verified: user.email_verified,
+                        history: [] // TODO: fetch from backend
                     }
                 })
 

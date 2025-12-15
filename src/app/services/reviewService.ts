@@ -323,6 +323,29 @@ class ReviewService {
         return distribution;
     }
 
+    // Fetch summary (avg rating and total reviews) for a tour
+    async getSummary(tourID: string | number): Promise<{ avg_rating: number; total_reviews: number }> {
+        try {
+            const response = await fetch(`${API_URL}/reviews/summary/${tourID}`, {
+                method: 'GET',
+                headers: this.getHeaders(),
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch review summary');
+
+            const result = await response.json();
+            if (!result.success || !result.data) return { avg_rating: 0, total_reviews: 0 };
+
+            return {
+                avg_rating: Number(result.data.avg_rating) || 0,
+                total_reviews: Number(result.data.total_reviews) || 0,
+            };
+        } catch (error) {
+            console.error('Error fetching review summary:', error);
+            return { avg_rating: 0, total_reviews: 0 };
+        }
+    }
+
     // getVerifiedPurchaseCount(reviews: Review[]): number {
     //     return reviews.filter(review => review.is_verified_purchase).length;
     // }

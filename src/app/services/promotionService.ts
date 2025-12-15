@@ -34,12 +34,14 @@ class PromotionService {
     }
 
     // Get all promotions
-    async getPromotions(params?: { active?: boolean }): Promise<ApiResponse<Promotion[]>> {
+    async getPromotions(params?: { active?: boolean , per_page?: number }): Promise<ApiResponse<Promotion[]>> {
         const queryParams = new URLSearchParams();
         if (params?.active !== undefined) {
             queryParams.append('active', params.active.toString());
         }
-
+        if (params?.per_page !== undefined) {
+            queryParams.append('per_page', params.per_page.toString());
+        }
         const response = await fetch(`${API_URL}/promotions?${queryParams.toString()}`, {
             method: 'GET',
             headers: this.getHeaders(),

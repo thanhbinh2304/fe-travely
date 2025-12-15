@@ -1,12 +1,17 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { IconMail, IconPhone, IconMapPin, IconCalendar, IconClock, IconShoppingBag, IconCurrencyDong, IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { UserDetailResponse } from "@/app/services/userService";
+import { UserDetailResponse, userService } from "@/app/services/userService"
+import { Button } from "@/components/ui/button"
 
-// Helper functions
+interface UserDetailCardsProps {
+    user: UserDetailResponse;
+}
+
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -48,15 +53,65 @@ const getStatusColor = (status: string) => {
     }
 }
 
-interface UserDetailCardsProps {
-    user: UserDetailResponse;
-}
-
 export function UserDetailCards({ user }: UserDetailCardsProps) {
+    // Booking UI state
+    const [bookingsPage, setBookingsPage] = useState<any | null>(null)
+    const [loadingBookings, setLoadingBookings] = useState(false)
+    const [page, setPage] = useState(1)
+    const [perPage, setPerPage] = useState(5)
+    const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined)
+    const [search, setSearch] = useState("")
+
+    // Normalize paginated object (accept either direct paginate obj or { bookings: paginate })
+    const pag = useMemo(() => {
+        if (!bookingsPage) return null
+        return bookingsPage.bookings ? bookingsPage.bookings : bookingsPage
+    }, [bookingsPage])
+
+    useEffect(() => {
+        const fetch = async () => {
+            try {
+                setLoadingBookings(true)
+                const res = await userService.getUserBookings(user.details.userID, {
+                    status: statusFilter,
+                    per_page: perPage,
+                    page,
+                })
+                // If search is used, fallback to client filtering (backend doesn't support tour title search here)
+                setBookingsPage(res)
+            } catch (err) {
+                console.error('Failed to fetch user bookings', err)
+                setBookingsPage(null)
+            } finally {
+                setLoadingBookings(false)
+            }
+        }
+        fetch()
+    }, [user.details.userID, statusFilter, perPage, page])
+
+    // derived list (apply search client-side)
+    const bookingsList = useMemo(() => {
+        const list = pag?.data || []
+        if (!search) return list
+        const q = search.toLowerCase()
+        return list.filter((b: any) => (b.tour?.title || '').toLowerCase().includes(q))
+    }, [pag, search])
+
+    // pagination helpers: show window of pages
+    const pageWindow = useMemo(() => {
+        const last = pag?.last_page || 1
+        const current = pag?.current_page || page
+        const radius = 2 // show current +/- radius
+        const start = Math.max(1, current - radius)
+        const end = Math.min(last, current + radius)
+        const arr = []
+        for (let i = start; i <= end; i++) arr.push(i)
+        return { arr, last, current }
+    }, [pag, page])
+
     return (
         <>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {/* Thông tin cơ bản */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Thông tin cá nhân</CardTitle>
@@ -89,7 +144,6 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                     </CardContent>
                 </Card>
 
-                {/* Trạng thái tài khoản */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Trạng thái tài khoản</CardTitle>
@@ -131,7 +185,6 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                     </CardContent>
                 </Card>
 
-                {/* Thống kê hoạt động */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Thống kê hoạt động</CardTitle>
@@ -169,7 +222,6 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                 </Card>
             </div>
 
-            {/* Thông tin thời gian */}
             <Card>
                 <CardHeader>
                     <CardTitle>Thông tin thời gian</CardTitle>
@@ -197,18 +249,74 @@ export function UserDetailCards({ user }: UserDetailCardsProps) {
                 </CardContent>
             </Card>
 
-            {/* Lịch sử booking - placeholder */}
+            {/* Booking history with filters and improved pagination */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Lịch sử booking</CardTitle>
-                    <CardDescription>Danh sách các booking gần đây</CardDescription>
+                    <div className="flex items-center justify-between w-full gap-4">
+                        <div>
+                            <CardTitle>Lịch sử booking</CardTitle>
+                            <CardDescription>Danh sách các booking của người dùng</CardDescription>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <select value={statusFilter || ""} onChange={(e) => { setStatusFilter(e.target.value || undefined); setPage(1); }} className="border rounded px-2 py-1">
+                                <option value="">Tất cả</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="completed">Completed</option>
+                            </select>
+
+                            <select value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1">
+                                <option value={5}>5</option>
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                            </select>
+
+                            <input placeholder="Tìm kiếm tour..." value={search} onChange={(e) => setSearch(e.target.value)} className="border rounded px-2 py-1" />
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-center py-8 text-muted-foreground">
-                        <IconShoppingBag className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p>Chức năng đang được phát triển</p>
-                        <p className="text-sm">Lịch sử booking sẽ hiển thị ở đây</p>
-                    </div>
+                    {loadingBookings ? (
+                        <div className="text-center py-8 text-muted-foreground">Đang tải...</div>
+                    ) : !pag || (pag.data && pag.data.length === 0) ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <IconShoppingBag className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p>Chưa có booking</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {bookingsList.map((b: any) => (
+                                <div key={b.bookingID} className="flex items-center justify-between p-3 border rounded">
+                                    <div>
+                                        <div className="font-medium">{b.tour?.title || '—'}</div>
+                                        <div className="text-sm text-muted-foreground">{new Date(b.bookingDate).toLocaleString('vi-VN')}</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm">{b.bookingStatus}</div>
+                                        <div className="text-sm font-semibold">{b.invoice?.amount ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.invoice.amount) : b.totalPrice ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.totalPrice) : '-'}</div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Pagination */}
+                            <div className="flex items-center justify-center gap-2 mt-2">
+                                <Button disabled={page <= 1} onClick={() => setPage(1)}>First</Button>
+                                <Button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</Button>
+
+                                {pageWindow.arr.map((pnum) => (
+                                    <button key={pnum} onClick={() => setPage(pnum)} className={`px-3 py-1 rounded ${pnum === page ? 'bg-sky-500 text-white' : 'border'}`}>
+                                        {pnum}
+                                    </button>
+                                ))}
+
+                                <Button disabled={page >= pageWindow.last} onClick={() => setPage((p) => p + 1)}>Next</Button>
+                                <Button disabled={page >= pageWindow.last} onClick={() => setPage(pageWindow.last)}>Last</Button>
+                            </div>
+
+                            <div className="text-center text-sm text-muted-foreground mt-2">Trang {pag.current_page} / {pag.last_page} — Tổng {pag.total} booking</div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </>

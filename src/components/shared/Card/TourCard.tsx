@@ -19,10 +19,38 @@ export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const mainImage = tourService.getMainImage(tour);
-    const averageRating = tour.reviews
-        ? reviewService.calculateAverageRating(tour.reviews)
-        : 0;
-    const totalReviews = tour.reviews?.length || 0;
+
+    // Derived values from tour object (fallbacks)
+    const _avgRaw = (tour as any).avg_rating ?? (tour as any).average_rating ?? null;
+    const derivedAverage = _avgRaw != null && _avgRaw !== ''
+        ? Number(_avgRaw)
+        : tour.reviews
+            ? reviewService.calculateAverageRating(tour.reviews)
+            : 0;
+
+    const _countRaw = (tour as any).review_count ?? (tour as any).total_reviews ?? (tour as any).reviews_count ?? (tour as any).reviewCount ?? null;
+    const derivedCount = (() => {
+        const r = (tour as any).reviews;
+        if (Array.isArray(r)) return r.length;
+        if (r && typeof r === 'object') {
+            if (Array.isArray(r.data)) return r.data.length;
+            if (typeof r.total === 'number') return r.total;
+            if (r.meta && typeof r.meta.total === 'number') return r.meta.total;
+            if (typeof r.length === 'number') return r.length;
+        }
+        if (_countRaw != null && _countRaw !== '') {
+            const n = Number(_countRaw);
+            return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+        }
+        return 0;
+    })();
+
+    // Local state to hold fetched summary (used when tour lacks proper fields)
+    const [fetchedAvg, setFetchedAvg] = useState<number | null>(null);
+    const [fetchedCount, setFetchedCount] = useState<number | null>(null);
+
+    const averageRating = fetchedAvg != null ? fetchedAvg : derivedAverage;
+    const totalReviews = fetchedCount != null ? fetchedCount : derivedCount;
     const duration = tourService.getTourDuration(tour.startDate, tour.endDate);
 
     useEffect(() => {
@@ -76,6 +104,26 @@ export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [tour.tourID]);
+
+    // Fetch review summary if tour doesn't include ratings/counts
+    useEffect(() => {
+        let mounted = true;
+        const needFetch = (derivedAverage === 0 && derivedCount === 0) || derivedCount === 0;
+        if (!needFetch) return;
+
+        (async () => {
+            try {
+                const summary = await reviewService.getSummary(tour.tourID);
+                if (!mounted) return;
+                setFetchedAvg(summary.avg_rating);
+                setFetchedCount(summary.total_reviews);
+            } catch (e) {
+                // ignore
+            }
+        })();
+
+        return () => { mounted = false; };
+    }, [tour.tourID, derivedAverage, derivedCount]);
 
     const handleWishlistClick = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -156,14 +204,21 @@ export default function TourCard({ tour, onAddtoWishlist }: TourCardProps) {
                 </div>
 
                 {/* Rating */}
-                {totalReviews > 0 ? (
+                {(averageRating > 0 || totalReviews > 0) ? (
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
-                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            {Array.from({ length: 5 }).map((_, idx) => {
+                                const fillAmount = Math.max(0, Math.min(1, averageRating - idx));
+                                const fillPercent = Math.round(fillAmount * 100);
+                                return (
+                                    <div key={idx} className="relative w-5 h-5">
+                                        <Star className="w-5 h-5 fill-gray-300 text-gray-300" />
+                                        <div className="absolute top-0 left-0 h-full overflow-hidden" style={{ width: `${fillPercent}%` }}>
+                                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                         <span className="text-base font-bold text-gray-900">
                             {averageRating.toFixed(1)}

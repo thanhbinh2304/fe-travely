@@ -103,7 +103,7 @@ class UserService {
     /**
      * Get all users with filters and pagination (Admin only)
      */
-    async getAllUsers(filters?: UserFilters): Promise<User[]> {
+    async getAllUsers(filters?: UserFilters, per_page?: number): Promise<User[]> {
         try {
             const queryParams = new URLSearchParams();
 
@@ -116,7 +116,7 @@ class UserService {
             if (filters?.sort_order) queryParams.append('sort_order', filters.sort_order);
             if (filters?.per_page) queryParams.append('per_page', filters.per_page.toString());
             if (filters?.page) queryParams.append('page', filters.page.toString());
-
+            if (per_page) queryParams.append('per_page', per_page.toString());
             const url = `${API_URL}/admin/users${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
             const response = await fetch(url, {
                 method: 'GET',
@@ -186,7 +186,7 @@ class UserService {
             if (filters?.per_page) queryParams.append('per_page', filters.per_page.toString());
             if (filters?.page) queryParams.append('page', filters.page.toString());
 
-            const url = `${API_URL}/users/${userId}/bookings${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+            const url = `${API_URL}/admin/users/${userId}/bookings${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
 
             const response = await fetch(url, {
                 method: 'GET',

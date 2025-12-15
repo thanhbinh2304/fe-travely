@@ -4,12 +4,29 @@ import { Star } from 'lucide-react';
 import { Review } from '@/types/review';
 
 interface ReviewsListProps {
-    reviews?: Review[];
+    // reviews can be an array or a paginator object with .data and .total/meta.total
+    reviews?: Review[] | any;
     averageRating?: number;
 }
 
 export default function ReviewsList({ reviews, averageRating }: ReviewsListProps) {
-    if (!reviews || reviews.length === 0) {
+    // Normalize reviews array and total count from possible backend shapes
+    const reviewsArray: Review[] = Array.isArray(reviews)
+        ? reviews
+        : reviews && Array.isArray(reviews.data)
+            ? reviews.data
+            : [];
+
+    const totalCount: number = (() => {
+        if (Array.isArray(reviews)) return reviews.length;
+        if (!reviews) return 0;
+        if (typeof reviews.total === 'number') return reviews.total;
+        if (reviews.meta && typeof reviews.meta.total === 'number') return reviews.meta.total;
+        if (Array.isArray(reviews.data)) return reviews.data.length;
+        return 0;
+    })();
+
+    if (totalCount === 0) {
         return (
             <div className="bg-white rounded-xl p-6 shadow-sm">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Đánh giá</h2>
@@ -22,8 +39,9 @@ export default function ReviewsList({ reviews, averageRating }: ReviewsListProps
         <div className="bg-white rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
-                    Đánh giá ({reviews.length})
-                </h2>                {averageRating && (
+                    Đánh giá ({totalCount})
+                </h2>
+                {averageRating !== undefined && (
                     <div className="flex items-center gap-2">
                         <Star className="w-6 h-6 fill-yellow-400 text-yellow-400" />
                         <span className="text-2xl font-bold">{averageRating.toFixed(1)}</span>
@@ -33,7 +51,7 @@ export default function ReviewsList({ reviews, averageRating }: ReviewsListProps
             </div>
 
             <div className="space-y-6">
-                {reviews.map((review) => (
+                {reviewsArray.map((review) => (
                     <div key={review.reviewID} className="border-b border-gray-200 pb-6 last:border-0">
                         <div className="flex items-start gap-4">
                             {/* Avatar */}

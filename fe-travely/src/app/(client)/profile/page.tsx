@@ -9,7 +9,7 @@ import { User, Mail, CreditCard, Bell, Loader2 } from 'lucide-react';
 import authService from '@/app/services/AuthService';
 import { toast } from 'sonner';
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_API ||'https://backend-travely.onrender.com/api';
 
 interface UserProfile {
     userID: number;

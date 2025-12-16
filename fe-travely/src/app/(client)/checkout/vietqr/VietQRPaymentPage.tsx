@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'https://backend-travely.onrender.com/api';
 
 export default function VietQRPaymentPage() {
     const router = useRouter();

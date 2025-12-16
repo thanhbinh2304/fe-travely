@@ -33,6 +33,8 @@ export interface AuthResponse {
     msg: string;
     token: string;
     data: {
+        debug: any;
+        requires_verification: any;
         user: User;
         access_token: string;
     }

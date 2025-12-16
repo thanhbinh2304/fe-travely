@@ -173,7 +173,6 @@ export const paymentColumns: ColumnDef<Payment>[] = [
             const statusMap: Record<string, { label: string; class: string }> = {
                 pending: { label: "Chờ thanh toán", class: "bg-yellow-100 text-yellow-800 border-yellow-300" },
                 completed: { label: "Đã thanh toán", class: "bg-green-100 text-green-800 border-green-300" },
-                paid: { label: "Đã thanh toán", class: "bg-green-100 text-green-800 border-green-300" },
                 failed: { label: "Thất bại", class: "bg-red-100 text-red-800 border-red-300" },
                 refunded: { label: "Đã hoàn tiền", class: "bg-gray-100 text-gray-800 border-gray-300" },
                 partially_refunded: { label: "Hoàn một phần", class: "bg-orange-100 text-orange-800 border-orange-300" },

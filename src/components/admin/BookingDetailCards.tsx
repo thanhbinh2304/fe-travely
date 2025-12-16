@@ -163,7 +163,7 @@ export function BookingDetailCards({ booking }: BookingDetailCardsProps) {
                             <IconFileText className="h-5 w-5 text-muted-foreground mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-muted-foreground mb-2">Trạng thái thanh toán</p>
-                                {booking.paymentStatus === 'completed' && (
+                                {booking.paymentStatus === 'paid' && (
                                     <Badge className="bg-green-100 text-green-800 border-green-300">
                                         Đã thanh toán
                                     </Badge>
@@ -203,7 +203,7 @@ export function BookingDetailCards({ booking }: BookingDetailCardsProps) {
             )}
 
             {/* Thông tin thời gian */}
-            {(booking.createdAt || booking.updatedAt) && (
+            {/* {(booking.createdAt || booking.updatedAt) && (
                 <Card>
                     <CardHeader>
                         <CardTitle>Thông tin thời gian</CardTitle>
@@ -231,8 +231,8 @@ export function BookingDetailCards({ booking }: BookingDetailCardsProps) {
                             )}
                         </div>
                     </CardContent>
-                </Card>
-            )}
+                </Card> */}
+            {/* )} */}
         </>
     )
 }

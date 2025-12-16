@@ -6,7 +6,7 @@ export interface Booking {
     numAdults: number;
     numChildren: number;
     totalPrice: number;
-    paymentStatus: 'pending' | 'paid' | 'refunded';
+    paymentStatus: 'pending' | 'paid' | 'refunded' | 'failed';
     bookingStatus: 'confirmed' | 'cancelled' | 'completed';
     specialRequests?: string;
     // Relations
@@ -61,13 +61,13 @@ export interface UpdateBookingStatusData {
 }
 
 export interface UpdatePaymentStatusData {
-    paymentStatus: 'pending' | 'paid' | 'refunded';
+    paymentStatus: 'pending' | 'paid' | 'refunded' | 'failed';
 }
 
 export interface BookingFilterParams {
     userID?: string;
     tourID?: number;
-    paymentStatus?: 'pending' | 'paid' | 'refunded';
+    paymentStatus?: 'pending' | 'paid' | 'refunded' | 'failed';
     bookingStatus?: 'confirmed' | 'cancelled' | 'completed';
     start_date?: string;
     end_date?: string;

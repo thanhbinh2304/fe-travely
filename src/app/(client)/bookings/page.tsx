@@ -101,12 +101,12 @@ export default function BookingsPage() {
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Upcoming bookings */}
                 <div className="mb-12">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4">Upcoming bookings</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4">Đặt tour sắp tới</h1>
 
                     {upcomingBookings.length === 0 ? (
                         <Card className="p-8">
                             <p className="text-gray-600">
-                                No vouchers yet. Once you make a booking, you'll find your vouchers here.
+                                Chưa có tour, khi bạn đặt tour thành công, nó sẽ hiển thị ở đây.
                             </p>
                         </Card>
                     ) : (
@@ -146,12 +146,12 @@ export default function BookingsPage() {
 
                 {/* Past and canceled bookings */}
                 <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-4">Past and canceled bookings</h2>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">Tour đã đặt hoặc đã hủy</h2>
 
                     {pastBookings.length === 0 ? (
                         <Card className="p-8">
                             <p className="text-gray-600">
-                                You don't have any past bookings.
+                                Bạn chưa từng đặt tour nào.
                             </p>
                         </Card>
                     ) : (

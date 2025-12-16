@@ -136,7 +136,9 @@ class MockAuthService {
             token: mockToken,
             data: {
                 access_token: mockToken,
-                user: user
+                user: user,
+                debug: undefined,
+                requires_verification: undefined
             }
         };
     }
@@ -182,7 +184,9 @@ class MockAuthService {
             token: mockToken,
             data: {
                 access_token: mockToken,
-                user: newUser
+                user: newUser,
+                debug: undefined,
+                requires_verification: undefined
             }
         };
     }
@@ -236,7 +240,9 @@ class MockAuthService {
             token: mockToken,
             data: {
                 access_token: mockToken,
-                user: mockUser
+                user: mockUser,
+                debug: undefined,
+                requires_verification: undefined
             }
         };
     }
@@ -263,7 +269,9 @@ class MockAuthService {
             token: mockToken,
             data: {
                 access_token: mockToken,
-                user: mockUser
+                user: mockUser,
+                debug: undefined,
+                requires_verification: undefined
             }
         };
     }

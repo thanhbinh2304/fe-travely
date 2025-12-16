@@ -71,7 +71,6 @@ export default function PaymentDetailPage() {
     const statusBadge = (() => {
         switch (payment.paymentStatus) {
             case 'completed':
-            case 'paid':
                 return <Badge className="bg-green-100 text-green-800 border-green-300">Đã thanh toán</Badge>
             case 'pending':
                 return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">Chờ thanh toán</Badge>
@@ -107,7 +106,7 @@ export default function PaymentDetailPage() {
                     Xác nhận thanh toán
                 </Button>
             )}
-            {(payment.paymentStatus === 'completed' || payment.paymentStatus === 'paid') && !payment.refundAmount && (
+            {(payment.paymentStatus === 'completed' || payment.paymentStatus === 'refunded') && !payment.refundAmount && (
                 <Button
                     variant="outline"
                     size="sm"
@@ -124,7 +123,7 @@ export default function PaymentDetailPage() {
                 onClick={async () => {
                     if (window.confirm(`Bạn có chắc muốn xóa payment #${payment.checkoutID}?`)) {
                         try {
-                            await paymentService.adminDeletePayment(payment.checkoutID)
+                            await paymentService.adminDeletePayment(Number(payment.checkoutID))
                             toast.success('Đã xóa payment thành công')
                             router.push('/dashboard/payments')
                         } catch (error: any) {

@@ -1,7 +1,7 @@
 import { ApiResponse } from "@/types/booking";
 import { Promotion, CreatePromotionData, UpdatePromotionData, ValidatePromotionData } from "@/types/promotion";
 
-const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'https://backend-travely.onrender.com/api';
 
 class PromotionService {
     private getHeaders(includeAuth = false) {

@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 
-const SERVER_API = process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api';
+const SERVER_API = process.env.NEXT_PUBLIC_SERVER_API || 'https://backend-travely.onrender.com/api';
 
 export async function verifyAdminRole(): Promise<{
     isAdmin: boolean;

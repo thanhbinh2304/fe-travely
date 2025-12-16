@@ -1,7 +1,7 @@
 
 import { User, UserCreateData, UserUpdateData } from "@/types/user";
 // import { getServerToken } from "@/utils/serverToken";
-const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'http://127.0.0.1:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_SERVER_API || 'https://backend-travely.onrender.com/api';
 
 interface ApiResponse<T> {
     success: boolean;

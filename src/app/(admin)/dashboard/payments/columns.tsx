@@ -54,7 +54,7 @@ function PaymentActionsCell({ payment, onDelete }: { payment: Payment, onDelete?
     const handleDelete = async () => {
         if (window.confirm(`Bạn có chắc muốn xóa payment #${payment.checkoutID}?`)) {
             if (onDelete) {
-                onDelete(payment.checkoutID)
+                onDelete(Number(payment.checkoutID))
             }
         }
     }
@@ -84,7 +84,7 @@ function PaymentActionsCell({ payment, onDelete }: { payment: Payment, onDelete?
                         Xác nhận thanh toán
                     </DropdownMenuItem>
                 )}
-                {(payment.paymentStatus === 'completed' || payment.paymentStatus === 'paid') && (
+                {(payment.paymentStatus === 'completed' || payment.paymentStatus === 'refunded') && (
                     <DropdownMenuItem onClick={() => toast.info(`Xử lý hoàn tiền: ${payment.checkoutID}`)}>
                         <IconRefresh className="mr-2 h-4 w-4" />
                         Hoàn tiền

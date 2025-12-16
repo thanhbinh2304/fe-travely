@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+
+import { useRouter } from 'next/navigation';
+import HeaderQueryHandler from './header/HeaderQueryHandle';
 import { Heart, ShoppingCart, Globe, User, ChevronDown, LogIn, Bell, Sun, HelpCircle, ChevronRight, Calendar, LogOut } from 'lucide-react';
 import { useScrollSearch } from '@/hooks/useScrollSearch';
 import SearchBar from './SearchBar';
@@ -25,7 +27,7 @@ export default function HeaderClient() {
     const { showSearchInHeader } = useScrollSearch();
     const { user, isAuthenticated, logout, refreshUser } = useAuth();
     const router = useRouter();
-    const searchParams = useSearchParams();
+    
 
     const handleSearch = (query: string) => {
         if (query.trim()) {
@@ -48,24 +50,7 @@ export default function HeaderClient() {
     };
 
     // Check for query params to auto-open login modal
-    useEffect(() => {
-        const verified = searchParams.get('verified');
-        const reset = searchParams.get('reset');
-        const token = searchParams.get('token');
-
-        if (verified === 'true') {
-            setLoginModalMode('login');
-            setIsLoginModalOpen(true);
-            // Clean up URL after a short delay
-            setTimeout(() => router.replace('/'), 100);
-        } else if (reset === 'true') {
-            setLoginModalMode('reset-password');
-            setLoginModalToken(token || '');
-            setIsLoginModalOpen(true);
-            // Clean up URL after a short delay
-            setTimeout(() => router.replace('/'), 100);
-        }
-    }, [searchParams, router]);
+   
 
     useEffect(() => {
         console.log('[Header] Component mounted, setting up listeners');
@@ -140,6 +125,19 @@ export default function HeaderClient() {
     };
     return (
         <>
+         <Suspense fallback={null}>
+            <HeaderQueryHandler
+                onVerifiedLogin={() => {
+                setLoginModalMode('login');
+                setIsLoginModalOpen(true);
+                }}
+                onResetPassword={(token) => {
+                setLoginModalMode('reset-password');
+                setLoginModalToken(token);
+                setIsLoginModalOpen(true);
+                }}
+            />
+        </Suspense>
             <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white shadow-md">
                 <div className="container mx-auto px-4">
                     <div className="flex items-center justify-between h-20">

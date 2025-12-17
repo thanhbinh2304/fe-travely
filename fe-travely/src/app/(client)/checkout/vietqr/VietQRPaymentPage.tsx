@@ -87,7 +87,7 @@ export default function VietQRPaymentPage() {
             const token = getToken();
             if (!token) {
                 toast.error('Vui lòng đăng nhập');
-                router.push('/auth/signin');
+                router.push('/?login=true');
                 return;
             }
 
@@ -135,7 +135,7 @@ export default function VietQRPaymentPage() {
             const token = getToken();
             if (!token) {
                 toast.error('Vui lòng đăng nhập');
-                router.push('/auth/signin');
+                router.push('/?login=true');
                 return;
             }
 
